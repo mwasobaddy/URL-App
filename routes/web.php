@@ -4,9 +4,6 @@ use Illuminate\Support\Facades\Route;
 use Livewire\Volt\Volt;
 
 Route::view('/', 'welcome')->name('home');
-Route::view('features', 'pages.features')->name('features');
-Route::view('pricing', 'pages.pricing')->name('pricing');
-Route::view('faq', 'pages.faq')->name('faq');
 
 Route::view('dashboard', 'dashboard')
     ->middleware(['auth', 'verified'])
@@ -18,6 +15,9 @@ Route::middleware(['auth'])->group(function () {
     Volt::route('settings/profile', 'settings.profile')->name('settings.profile');
     Volt::route('settings/password', 'settings.password')->name('settings.password');
     Volt::route('settings/appearance', 'settings.appearance')->name('settings.appearance');
+    
+    // Notifications
+    Volt::route('notifications', 'notifications')->name('notifications');
 });
 
 // URL-App: User dashboard and list management
@@ -26,7 +26,6 @@ Route::middleware(['auth'])->group(function () {
     Volt::route('lists', 'url-list-dashboard')->name('lists.dashboard');
     Volt::route('lists/{custom_url}/manage', 'url-list-display')->name('lists.show');
     Volt::route('lists/{custom_url}/share', 'url-list-share')->name('lists.share');
-    // New route for managing list access
     Route::get('lists/{urlList}/access', App\Livewire\ManageListAccess::class)->name('lists.access');
 });
 
