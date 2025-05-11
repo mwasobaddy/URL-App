@@ -4,41 +4,97 @@
         @include('partials.head')
     </head>
     <body class="min-h-screen bg-white dark:bg-zinc-800">
-        <flux:sidebar sticky stashable class="border-e border-emerald-200 bg-white dark:border-emerald-800 dark:bg-neutral-950 min-h-screen flex flex-col">
-            <div class="flex items-center gap-2 px-6 py-4 border-b border-emerald-100 dark:border-emerald-900">
-                <x-app-logo class="h-8 w-8 text-emerald-600" />
-                <span class="font-bold text-lg text-emerald-700 tracking-tight">URL-App</span>
+        @if(auth()->check() && !request()->routeIs('lists.public'))
+        <flux:sidebar sticky stashable class="border-e border-emerald-200 dark:border-emerald-800 bg-gradient-to-b from-white to-emerald-50/20 dark:from-neutral-950 dark:to-emerald-950/20">
+            <div class="flex items-center gap-3 px-6 py-4 border-b border-emerald-100 dark:border-emerald-900">
+                <div class="flex items-center justify-center size-10 rounded-xl bg-emerald-600 dark:bg-emerald-500">
+                    <x-app-logo-icon class="size-6 fill-current text-white" />
+                </div>
+                <span class="font-bold text-xl text-emerald-950 dark:text-emerald-100 tracking-tight">URL-App</span>
             </div>
-            <nav class="flex-1 px-4 py-6 space-y-2">
-                <a href="{{ route('dashboard') }}" class="block px-4 py-2 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 font-medium transition" wire:navigate>Dashboard</a>
-                <a href="{{ route('lists.dashboard') }}" class="block px-4 py-2 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 font-medium transition" wire:navigate>My URL Lists</a>
-                <a href="{{ route('lists.create') }}" class="block px-4 py-2 rounded-lg text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 font-semibold transition" wire:navigate>Create New List</a>
-            </nav>
-            <div class="mt-auto px-4 pb-4">
-                <div class="flex gap-2 mb-2">
-                    <a href="https://github.com/laravel/livewire-starter-kit" target="_blank" class="text-gray-400 hover:text-emerald-600" title="GitHub">
-                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 .5C5.73.5.5 5.73.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56v-2.02c-3.2.7-3.87-1.54-3.87-1.54-.53-1.34-1.3-1.7-1.3-1.7-1.06-.72.08-.71.08-.71 1.17.08 1.79 1.2 1.79 1.2 1.04 1.78 2.73 1.27 3.4.97.11-.75.41-1.27.75-1.56-2.55-.29-5.23-1.28-5.23-5.7 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11.1 11.1 0 0 1 2.9-.39c.98 0 1.97.13 2.9.39 2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.43-2.69 5.41-5.25 5.7.42.36.8 1.09.8 2.2v3.26c0 .31.21.67.8.56C20.71 21.39 24 17.08 24 12c0-6.27-5.23-11.5-12-11.5z"/></svg>
-                    </a>
-                    <a href="https://laravel.com/docs/starter-kits#livewire" target="_blank" class="text-gray-400 hover:text-emerald-600" title="Docs">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75V19.5A2.25 2.25 0 0 0 4.5 21.75h15a2.25 2.25 0 0 0 2.25-2.25V6.75M2.25 6.75A2.25 2.25 0 0 1 4.5 4.5h15a2.25 2.25 0 0 1 2.25 2.25M2.25 6.75h19.5"/></svg>
-                    </a>
-                </div>
-                @auth
-                <div class="flex items-center gap-3 p-3 rounded-lg bg-emerald-50 dark:bg-emerald-900/30">
-                    <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-200 text-emerald-800 font-bold">{{ auth()->user()->initials() }}</span>
-                    <div class="flex-1">
-                        <div class="font-semibold text-emerald-800 dark:text-emerald-200">{{ auth()->user()->name }}</div>
-                        <div class="text-xs text-gray-500 dark:text-gray-400">{{ auth()->user()->email }}</div>
+
+            <nav class="flex-1 px-4 py-6">
+                <div class="space-y-6">
+                    <!-- Main Navigation -->
+                    <div class="space-y-2">
+                        <div class="px-3 text-xs font-medium text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">
+                            Main
+                        </div>
+                        <div class="space-y-1">
+                            <a href="{{ route('dashboard') }}" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm {{ request()->routeIs('dashboard') ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-900 dark:text-emerald-100' : 'text-emerald-800 dark:text-emerald-200 hover:bg-emerald-50 dark:hover:bg-emerald-900/30' }}" wire:navigate>
+                                <svg class="size-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z" /></svg>
+                                Dashboard
+                            </a>
+                            <a href="{{ route('lists.dashboard') }}" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm {{ request()->routeIs('lists.*') ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-900 dark:text-emerald-100' : 'text-emerald-800 dark:text-emerald-200 hover:bg-emerald-50 dark:hover:bg-emerald-900/30' }}" wire:navigate>
+                                <svg class="size-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" /></svg>
+                                My URL Lists
+                            </a>
+                        </div>
                     </div>
-                    <form method="POST" action="{{ route('logout') }}">
-                        @csrf
-                        <button type="submit" class="ml-2 text-xs text-red-500 hover:underline">Logout</button>
-                    </form>
+
+                    <!-- Actions -->
+                    <div class="space-y-2">
+                        <div class="px-3 text-xs font-medium text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">
+                            Actions
+                        </div>
+                        <div class="space-y-1">
+                            <a href="{{ route('lists.create') }}" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium bg-emerald-600 hover:bg-emerald-700 text-white" wire:navigate>
+                                <svg class="size-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                                Create New List
+                            </a>
+                        </div>
+                    </div>
                 </div>
-                <a href="{{ route('settings.profile') }}" class="block mt-2 text-xs text-gray-500 hover:text-emerald-700">Settings</a>
-                @endauth
+            </nav>
+
+            <div class="mt-auto px-4 pb-4">
+                <div class="rounded-xl bg-emerald-50 dark:bg-emerald-900/30 p-3">
+                    <div class="flex items-center gap-3">
+                        <span class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-600 dark:bg-emerald-500 text-white font-bold text-sm">
+                            {{ auth()->user()->initials() }}
+                        </span>
+                        <div class="flex-1 min-w-0">
+                            <div class="truncate font-medium text-emerald-900 dark:text-emerald-100">{{ auth()->user()->name }}</div>
+                            <div class="truncate text-xs text-emerald-700 dark:text-emerald-300">{{ auth()->user()->email }}</div>
+                        </div>
+                    </div>
+                    <div class="mt-3 flex items-center gap-2 text-sm">
+                        <a href="{{ route('settings.profile') }}" class="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-300 hover:text-emerald-900 dark:hover:text-emerald-100" wire:navigate>
+                            <svg class="size-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                            Settings
+                        </a>
+                        <form method="POST" action="{{ route('logout') }}" class="flex-1 text-right">
+                            @csrf
+                            <button type="submit" class="inline-flex items-center gap-1 text-red-600 hover:text-red-700 dark:text-red-500 dark:hover:text-red-400">
+                                <svg class="size-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" /></svg>
+                                Logout
+                            </button>
+                        </form>
+                    </div>
+                </div>
             </div>
         </flux:sidebar>
+        @else
+        <!-- Simple header for guests and public list views -->
+        <div class="bg-white dark:bg-neutral-950 border-b border-emerald-100 dark:border-emerald-900 px-6 py-4">
+            <div class="mx-auto max-w-screen-xl flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="flex items-center justify-center size-10 rounded-xl bg-emerald-600 dark:bg-emerald-500">
+                        <x-app-logo-icon class="size-6 fill-current text-white" />
+                    </div>
+                    <span class="font-bold text-xl text-emerald-950 dark:text-emerald-100 tracking-tight">URL-App</span>
+                </div>
+                <div class="flex items-center gap-4">
+                    @auth
+                        <a href="{{ route('lists.dashboard') }}" class="text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 font-medium" wire:navigate>My Lists</a>
+                    @else
+                        <a href="{{ route('login') }}" class="text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 font-medium" wire:navigate>Login</a>
+                        <a href="{{ route('register') }}" class="inline-flex items-center justify-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 transition-colors" wire:navigate>Get Started</a>
+                    @endauth
+                </div>
+            </div>
+        </div>
+        @endif
 
         {{ $slot }}
 

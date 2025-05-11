@@ -243,17 +243,27 @@ new class extends Component {
 }; ?>
 
 <div class="space-y-4">
-    <!-- Search and Add URL Button -->
-    <div class="flex justify-between items-center mb-4">
-        <input type="text" 
-               wire:model.live.debounce.300ms="search" 
-               placeholder="Search URLs, titles, or descriptions..." 
-               class="flex-1 rounded-lg border border-gray-300 dark:border-gray-700 px-4 py-2 focus:ring-2 focus:ring-emerald-400 focus:outline-none bg-white dark:bg-neutral-900 text-gray-900 dark:text-gray-100">
-        
-        <button wire:click="$set('showAddUrlModal', true)" class="ml-4 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg transition">
-            Add URL
-        </button>
-    </div>
+    @if(auth()->check() && $list->user_id === auth()->id())
+        <!-- Search and Add URL Button -->
+        <div class="flex justify-between items-center mb-4">
+            <input type="text" 
+                wire:model.live.debounce.300ms="search" 
+                placeholder="Search URLs, titles, or descriptions..." 
+                class="flex-1 rounded-lg border border-gray-300 dark:border-gray-700 px-4 py-2 focus:ring-2 focus:ring-emerald-400 focus:outline-none bg-white dark:bg-neutral-900 text-gray-900 dark:text-gray-100">
+            
+            <button wire:click="$set('showAddUrlModal', true)" class="ml-4 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg transition">
+                Add URL
+            </button>
+        </div>
+    @elseif($search)
+        <!-- Search only for public lists -->
+        <div class="mb-4">
+            <input type="text" 
+                wire:model.live.debounce.300ms="search" 
+                placeholder="Search URLs, titles, or descriptions..." 
+                class="w-full rounded-lg border border-gray-300 dark:border-gray-700 px-4 py-2 focus:ring-2 focus:ring-emerald-400 focus:outline-none bg-white dark:bg-neutral-900 text-gray-900 dark:text-gray-100">
+        </div>
+    @endif
 
     <!-- URLs Table -->
     <div class="overflow-x-auto bg-white dark:bg-neutral-900 rounded-lg shadow">
@@ -278,9 +288,11 @@ new class extends Component {
                             <span class="ml-1">{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
                         @endif
                     </th>
-                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Actions
-                    </th>
+                    @if(auth()->check() && $list->user_id === auth()->id())
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                            Actions
+                        </th>
+                    @endif
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
@@ -290,66 +302,59 @@ new class extends Component {
                             <a href="{{ $url->url }}" target="_blank" rel="noopener noreferrer" class="text-emerald-600 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 truncate inline-block max-w-xs">
                                 {{ $url->url }}
                             </a>
-                            @if($urlMetadata[$url->id]['loading'])
-                                <div class="mt-1 text-xs text-gray-500">
-                                    <div class="flex items-center">
-                                        <svg class="animate-spin h-4 w-4 text-emerald-500 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        </td>
+                        <td class="px-6 py-4">
+                            @if(isset($urlMetadata[$url->id]))
+                                @if($urlMetadata[$url->id]['loading'])
+                                    <div class="flex items-center text-gray-500">
+                                        <svg class="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                         </svg>
                                         Loading metadata...
                                     </div>
-                                </div>
-                            @endif
-                        </td>
-                        <td class="px-6 py-4">
-                            @if($urlMetadata[$url->id]['error'])
-                                <div class="flex items-center text-gray-500 text-sm">
-                                    <svg class="h-4 w-4 text-red-500 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-                                    </svg>
-                                    Failed to load metadata
-                                    <button wire:click="retryMetadata({{ $url->id }})" class="ml-2 text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300">
-                                        Retry
-                                    </button>
-                                </div>
-                            @else
-                                @if($urlMetadata[$url->id]['title'])
-                                    <div class="text-gray-900 dark:text-gray-100 font-medium">
-                                        {{ $urlMetadata[$url->id]['title'] }}
-                                    </div>
-                                @endif
-                                @if($urlMetadata[$url->id]['description'])
-                                    <div class="mt-1 text-sm text-gray-500 dark:text-gray-400 line-clamp-2">
-                                        {{ $urlMetadata[$url->id]['description'] }}
-                                    </div>
-                                @endif
-                                @if(!$urlMetadata[$url->id]['loading'] && !$urlMetadata[$url->id]['title'] && !$urlMetadata[$url->id]['description'])
-                                    <div class="text-gray-500 text-sm">
-                                        No metadata available
+                                @elseif($urlMetadata[$url->id]['error'])
+                                    <div class="flex items-center text-gray-500 text-sm">
+                                        <svg class="h-4 w-4 text-red-500 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                                        </svg>
+                                        Failed to load metadata
                                         <button wire:click="retryMetadata({{ $url->id }})" class="ml-2 text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300">
                                             Retry
                                         </button>
                                     </div>
+                                @else
+                                    @if($urlMetadata[$url->id]['title'])
+                                        <div class="text-gray-900 dark:text-gray-100 font-medium">
+                                            {{ $urlMetadata[$url->id]['title'] }}
+                                        </div>
+                                    @endif
+                                    @if($urlMetadata[$url->id]['description'])
+                                        <div class="mt-1 text-sm text-gray-500 dark:text-gray-400 line-clamp-2">
+                                            {{ $urlMetadata[$url->id]['description'] }}
+                                        </div>
+                                    @endif
                                 @endif
                             @endif
                         </td>
                         <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
                             {{ $url->created_at->diffForHumans() }}
                         </td>
-                        <td class="px-6 py-4 text-right text-sm whitespace-nowrap">
-                            <button wire:click="editUrl({{ $url->id }})" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 mr-3">
-                                Edit
-                            </button>
-                            <button wire:click="deleteUrl({{ $url->id }})" class="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300">
-                                Delete
-                            </button>
-                        </td>
+                        @if(auth()->check() && $list->user_id === auth()->id())
+                            <td class="px-6 py-4 text-right text-sm whitespace-nowrap">
+                                <button wire:click="editUrl({{ $url->id }})" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 mr-3">
+                                    Edit
+                                </button>
+                                <button wire:click="deleteUrl({{ $url->id }})" class="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300">
+                                    Delete
+                                </button>
+                            </td>
+                        @endif
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="4" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
-                            No URLs found. Add your first URL above.
+                        <td colspan="{{ auth()->check() && $list->user_id === auth()->id() ? '4' : '3' }}" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                            No URLs found. @if(auth()->check() && $list->user_id === auth()->id()) Add your first URL above. @endif
                         </td>
                     </tr>
                 @endforelse
