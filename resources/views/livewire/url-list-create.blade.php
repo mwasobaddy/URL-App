@@ -2,34 +2,49 @@
 
 use Livewire\Volt\Component;
 use Illuminate\Support\Str;
+use WireUi\Traits\WireUiActions;
 
 new class extends Component {
+    use WireUiActions;
+
     public string $name = '';
     public string $custom_url = '';
     public ?string $generatedUrl = null;
 
     public function createList()
     {
-        // Sanitize custom_url: replace spaces with dashes and lowercase
-        if ($this->custom_url) {
-            $this->custom_url = strtolower(preg_replace('/\s+/', '-', $this->custom_url));
+        try {
+            // Sanitize custom_url: replace spaces with dashes and lowercase
+            if ($this->custom_url) {
+                $this->custom_url = strtolower(preg_replace('/\s+/', '-', $this->custom_url));
+            }
+            $this->validate([
+                'name' => 'required|string|max:255',
+                'custom_url' => 'nullable|alpha_dash|unique:url_lists,custom_url',
+            ]);
+
+            $customUrl = $this->custom_url ?: $this->generateUniqueUrl();
+
+            $list = \App\Models\UrlList::create([
+                'user_id' => auth()->id(),
+                'name' => $this->name,
+                'custom_url' => $customUrl,
+                'published' => false,
+            ]);
+            
+            $this->generatedUrl = $list->custom_url;
+            $this->reset(['name', 'custom_url']);
+            
+            $this->notification()->success(
+                title: 'List Created',
+                description: 'Your new URL list was created successfully!'
+            );
+        } catch (\Exception $e) {
+            $this->notification()->error(
+                title: 'Error',
+                description: 'There was a problem creating your list. Please try again.'
+            );
         }
-        $this->validate([
-            'name' => 'required|string|max:255',
-            'custom_url' => 'nullable|alpha_dash|unique:url_lists,custom_url',
-        ]);
-
-        $customUrl = $this->custom_url ?: $this->generateUniqueUrl();
-
-        $list = \App\Models\UrlList::create([
-            'user_id' => auth()->id(),
-            'name' => $this->name,
-            'custom_url' => $customUrl,
-            'published' => false,
-        ]);
-
-        $this->generatedUrl = $list->custom_url;
-        $this->reset(['name', 'custom_url']);
     }
 
     private function generateUniqueUrl(): string

@@ -1,28 +1,94 @@
 <?php
 
 use Livewire\Volt\Component;
+use WireUi\Traits\WireUiActions;
+use Livewire\WithPagination;
 
 new class extends Component {
+    use WireUiActions, WithPagination;
+
     public $lists;
+    public $search = '';
+    public $sortBy = 'created_at';
+    public $sortDirection = 'desc';
+    protected $queryString = ['search', 'sortBy', 'sortDirection'];
 
     public function mount()
     {
-        $this->lists = \App\Models\UrlList::where('user_id', auth()->id())->latest()->get();
+        $this->loadLists();
+    }
+
+    public function loadLists()
+    {
+        $query = \App\Models\UrlList::where('user_id', auth()->id());
+        
+        if ($this->search) {
+            $query->where(function($q) {
+                $q->where('name', 'like', '%' . $this->search . '%')
+                  ->orWhere('custom_url', 'like', '%' . $this->search . '%');
+            });
+        }
+
+        $query->orderBy($this->sortBy, $this->sortDirection);
+
+        $this->lists = $query->get();
+    }
+
+    public function updatedSearch()
+    {
+        $this->loadLists();
     }
 
     public function deleteList($id)
     {
-        $list = \App\Models\UrlList::where('user_id', auth()->id())->findOrFail($id);
-        $list->delete();
-        $this->lists = \App\Models\UrlList::where('user_id', auth()->id())->latest()->get();
+        try {
+            $list = \App\Models\UrlList::where('user_id', auth()->id())->findOrFail($id);
+            $list->delete();
+            $this->loadLists();
+            
+            $this->notification()->success(
+                title: 'List Deleted',
+                description: 'The URL list was deleted successfully.'
+            );
+        } catch (\Exception $e) {
+            $this->notification()->error(
+                title: 'Error',
+                description: 'There was a problem deleting the list. Please try again.'
+            );
+        }
     }
 
     public function togglePublish($id)
     {
-        $list = \App\Models\UrlList::where('user_id', auth()->id())->findOrFail($id);
-        $list->published = !$list->published;
-        $list->save();
-        $this->lists = \App\Models\UrlList::where('user_id', auth()->id())->latest()->get();
+        try {
+            $list = \App\Models\UrlList::where('user_id', auth()->id())->findOrFail($id);
+            $list->published = !$list->published;
+            $list->save();
+            $this->loadLists();
+            
+            $this->notification()->success(
+                title: $list->published ? 'List Published' : 'List Unpublished',
+                description: $list->published 
+                    ? 'Your list is now publicly accessible.'
+                    : 'Your list is now private.'
+            );
+        } catch (\Exception $e) {
+            $this->notification()->error(
+                title: 'Error',
+                description: 'There was a problem updating the list. Please try again.'
+            );
+        }
+    }
+
+    public function sort($field)
+    {
+        if ($this->sortBy === $field) {
+            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            $this->sortBy = $field;
+            $this->sortDirection = 'asc';
+        }
+        $this->loadLists();
     }
 }; ?>
 
@@ -40,13 +106,36 @@ new class extends Component {
             </ul>
         </div>
     @endif
+
+    <div class="mb-4">
+        <input type="text" 
+               wire:model.live="search" 
+               placeholder="Search lists by name or URL..." 
+               class="w-full rounded-lg border border-gray-300 dark:border-gray-700 px-4 py-2 focus:ring-2 focus:ring-emerald-400 focus:outline-none bg-white dark:bg-neutral-900 text-gray-900 dark:text-gray-100">
+    </div>
+
     <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead class="bg-gray-50 dark:bg-neutral-800">
                 <tr>
-                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wider">Name</th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wider">Custom URL</th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wider">Published</th>
+                    <th wire:click="sort('name')" class="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wider cursor-pointer group">
+                        Name
+                        @if($sortBy === 'name')
+                            <span class="ml-1">{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
+                        @endif
+                    </th>
+                    <th wire:click="sort('custom_url')" class="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wider cursor-pointer group">
+                        Custom URL
+                        @if($sortBy === 'custom_url')
+                            <span class="ml-1">{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
+                        @endif
+                    </th>
+                    <th wire:click="sort('published')" class="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wider cursor-pointer group">
+                        Published
+                        @if($sortBy === 'published')
+                            <span class="ml-1">{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
+                        @endif
+                    </th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wider">Actions</th>
                 </tr>
             </thead>

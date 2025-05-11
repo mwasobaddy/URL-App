@@ -44,6 +44,7 @@
             </flux:navbar>
 
             <!-- Desktop User Menu -->
+            @auth
             <flux:dropdown position="top" align="end">
                 <flux:profile
                     class="cursor-pointer"
@@ -86,6 +87,7 @@
                     </form>
                 </flux:menu>
             </flux:dropdown>
+            @endauth
         </flux:header>
 
         <!-- Mobile Menu -->

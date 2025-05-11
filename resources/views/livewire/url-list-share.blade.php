@@ -1,8 +1,11 @@
 <?php
 
 use Livewire\Volt\Component;
+use WireUi\Traits\WireUiActions;
 
 new class extends Component {
+    use WireUiActions;
+
     public $list;
     public $shareUrl;
 
@@ -16,9 +19,32 @@ new class extends Component {
 
     public function togglePublish()
     {
-        $this->list->published = !$this->list->published;
-        $this->list->save();
-        $this->list = $this->list->fresh();
+        try {
+            $this->list->published = !$this->list->published;
+            $this->list->save();
+            $this->list = $this->list->fresh();
+            
+            $this->notification()->success(
+                title: $this->list->published ? 'List Published' : 'List Unpublished',
+                description: $this->list->published 
+                    ? 'Your list is now publicly accessible.'
+                    : 'Your list is now private.'
+            );
+        } catch (\Exception $e) {
+            $this->notification()->error(
+                title: 'Error',
+                description: 'There was a problem updating the list.'
+            );
+        }
+    }
+
+    public function copyUrl()
+    {
+        $this->notification()->success(
+            
+            title: 'URL Copied',
+            description: 'The shareable URL has been copied to your clipboard.'
+        );
     }
 }; ?>
 
@@ -40,7 +66,7 @@ new class extends Component {
         <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Shareable URL</label>
         <div class="flex gap-2">
             <input type="text" value="{{ $shareUrl }}" readonly id="share-url" class="flex-1 rounded-lg border border-gray-300 dark:border-gray-700 px-4 py-2 bg-gray-50 dark:bg-neutral-800 text-gray-900 dark:text-gray-100">
-            <button type="button" onclick="navigator.clipboard.writeText('{{ $shareUrl }}')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-4 py-2 rounded-lg transition">Copy</button>
+            <button type="button" onclick="navigator.clipboard.writeText('{{ $shareUrl }}'); @this.call('copyUrl')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-4 py-2 rounded-lg transition">Copy</button>
         </div>
     </div>
     <div class="flex items-center gap-4">
