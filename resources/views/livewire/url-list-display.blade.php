@@ -11,7 +11,6 @@ new class extends Component {
     use WireUiActions, WithPagination;
 
     public $list;
-    public $urls;
     public $search = '';
     public $sortBy = 'created_at';
     public $sortDirection = 'desc';
@@ -20,12 +19,13 @@ new class extends Component {
     public $newTitle = '';
     public $newDescription = '';
     public $urlMetadata = [];
-    public $isLoading = true;
+    public $isLoading = false;
     public $loadedCount = 0;
     public $totalUrls = 0;
+    public $fetchingMetadataFor = [];
 
     protected $queryString = ['search', 'sortBy', 'sortDirection'];
-    protected $listeners = ['urlAdded' => 'handleUrlAdded', 'urlUpdated' => 'handleUrlUpdated', 'urlDeleted' => 'loadUrls'];
+    protected $listeners = ['urlAdded' => 'handleUrlAdded', 'urlUpdated' => 'handleUrlUpdated', 'urlDeleted' => 'resetPage'];
 
     public function mount($custom_url)
     {
@@ -38,14 +38,11 @@ new class extends Component {
         }
         
         $this->list = $query->firstOrFail();
-        $this->loadUrls();
+        $this->initializeUrlMetadata();
     }
 
     public function with(): array
     {
-        $this->isLoading = true;
-        $this->loadedCount = 0;
-        
         $query = $this->list->urls();
         
         if ($this->search) {
@@ -58,39 +55,47 @@ new class extends Component {
 
         $query->orderBy($this->sortBy, $this->sortDirection);
         $urls = $query->paginate(10);
-        $this->totalUrls = $urls->total();
         
-        // Initialize metadata for new URLs
-        foreach ($urls as $url) {
-            if (!isset($this->urlMetadata[$url->id])) {
-                $this->urlMetadata[$url->id] = [
-                    'title' => null,
-                    'description' => null,
-                    'loading' => true
-                ];
-                
-                // Fetch metadata in background
-                $this->fetchUrlMetadata($url->id);
-            }
-        }
-
-        if ($this->totalUrls === 0) {
-            $this->isLoading = false;
-        }
+        // Initialize metadata for newly loaded URLs
+        $this->initializeUrlMetadata($urls);
 
         return [
             'urls' => $urls
         ];
     }
 
+    protected function initializeUrlMetadata($urls = null)
+    {
+        if (!$urls) {
+            $urls = $this->list->urls()->get();
+        }
+        
+        foreach ($urls as $url) {
+            if (!isset($this->urlMetadata[$url->id])) {
+                $this->urlMetadata[$url->id] = [
+                    'title' => null,
+                    'description' => null,
+                    'loading' => false,
+                    'error' => false
+                ];
+                
+                // Fetch metadata for new URLs
+                $this->fetchUrlMetadata($url->id);
+            }
+        }
+    }
+
     public function fetchUrlMetadata($id)
     {
-        $url = $this->urls->firstWhere('id', $id);
-        if (!$url || ($this->urlMetadata[$id]['title'] && $this->urlMetadata[$id]['description'])) {
-            $this->incrementLoadedCount();
+        $url = $this->list->urls()->find($id);
+        if (!$url || in_array($id, $this->fetchingMetadataFor)) {
             return;
         }
 
+        $this->urlMetadata[$id]['loading'] = true;
+        $this->urlMetadata[$id]['error'] = false;
+        $this->fetchingMetadataFor[] = $id;
+        
         try {
             $response = Http::timeout(5)->get($url->url);
             if ($response->successful()) {
@@ -101,47 +106,35 @@ new class extends Component {
                 $this->urlMetadata[$id] = [
                     'title' => !empty($titleMatches[1]) ? html_entity_decode($titleMatches[1], ENT_QUOTES) : null,
                     'description' => !empty($descMatches[1]) ? html_entity_decode($descMatches[1], ENT_QUOTES) : null,
-                    'loading' => false
+                    'loading' => false,
+                    'error' => false
                 ];
+            } else {
+                $this->urlMetadata[$id]['error'] = true;
             }
         } catch (\Exception $e) {
-            $this->urlMetadata[$id]['loading'] = false;
+            $this->urlMetadata[$id]['error'] = true;
         }
-        
-        $this->incrementLoadedCount();
+
+        $this->urlMetadata[$id]['loading'] = false;
+        $this->fetchingMetadataFor = array_diff($this->fetchingMetadataFor, [$id]);
     }
 
-    public function incrementLoadedCount()
+    public function handleUrlAdded($urlData) 
     {
-        $this->loadedCount++;
-        if ($this->loadedCount >= $this->totalUrls) {
-            $this->isLoading = false;
-        }
-    }
-
-    public function handleUrlAdded($urlData)
-    {
-        if ($this->sortDirection === 'desc') {
-            $this->urls->prepend(new \App\Models\Url($urlData));
-        } else {
-            $this->urls->push(new \App\Models\Url($urlData));
-        }
+        $this->resetPage();
     }
 
     public function handleUrlUpdated($urlData)
     {
-        $index = $this->urls->search(fn($item) => $item->id === $urlData['id']);
-        if ($index !== false) {
-            $this->urls[$index] = new \App\Models\Url($urlData);
-        }
         if ($this->sortBy !== 'created_at') {
-            $this->loadUrls();
+            $this->resetPage();
         }
     }
 
     public function updatedSearch()
     {
-        $this->loadUrls();
+        $this->resetPage();
     }
 
     public function deleteUrl($id)
@@ -149,12 +142,13 @@ new class extends Component {
         try {
             $url = $this->list->urls()->findOrFail($id);
             $url->delete();
-            $this->urls = $this->urls->reject(fn($item) => $item->id === $id);
             
             $this->notification()->success(
                 'URL Deleted',
                 'The URL was deleted successfully.'
             );
+
+            $this->resetPage();
         } catch (\Exception $e) {
             $this->notification()->error(
                 'Error',
@@ -176,7 +170,7 @@ new class extends Component {
             $this->sortBy = $field;
             $this->sortDirection = 'asc';
         }
-        $this->loadUrls();
+        $this->resetPage();
     }
 
     public function addUrl()
@@ -202,7 +196,7 @@ new class extends Component {
                 'The URL was successfully added to your list.'
             );
 
-            $this->loadUrls();
+            $this->resetPage();
         } catch (\Exception $e) {
             $this->notification()->error(
                 'Error',
@@ -213,17 +207,6 @@ new class extends Component {
 }; ?>
 
 <div class="space-y-4">
-    @if($isLoading)
-    <div class="fixed inset-0 bg-white/80 dark:bg-neutral-900/80 z-50 flex items-center justify-center">
-        <div class="text-center">
-            <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-emerald-500 border-r-transparent"></div>
-            <div class="mt-4 text-emerald-600 dark:text-emerald-400">
-                Loading metadata ({{ $loadedCount }}/{{ $totalUrls }})...
-            </div>
-        </div>
-    </div>
-    @endif
-
     <div class="flex justify-between items-center mb-4">
         <input type="text" 
                wire:model.live="search" 
@@ -280,8 +263,8 @@ new class extends Component {
                                         <div class="text-gray-500 dark:text-gray-500 line-clamp-2">{{ $urlMetadata[$url->id]['description'] }}</div>
                                     @endif
                                     @if(!$urlMetadata[$url->id]['title'] && !$urlMetadata[$url->id]['description'])
-                                        <div class="text-gray-500">
-                                            No metadata found
+                                        <div class="flex items-center text-gray-500">
+                                            <span>{{ $urlMetadata[$url->id]['error'] ? 'Failed to load metadata' : 'No metadata found' }}</span>
                                             <button wire:click="fetchUrlMetadata({{ $url->id }})" class="text-emerald-600 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 ml-1">
                                                 Retry
                                             </button>
@@ -319,7 +302,6 @@ new class extends Component {
         </table>
     </div>
 
-    <!-- Add pagination UI -->
     @if($urls->hasPages())
         <div class="mt-6">
             <div class="bg-white/70 dark:bg-neutral-800/70 backdrop-blur-sm rounded-xl py-3 px-4 shadow-sm border border-gray-100/50 dark:border-neutral-700/50">
@@ -331,7 +313,7 @@ new class extends Component {
         <div class="mt-6 flex items-center justify-center">
             <div class="bg-white/70 dark:bg-neutral-800/70 backdrop-blur-sm rounded-full py-1.5 px-4 shadow-sm border border-gray-100/50 dark:border-neutral-700/50">
                 <span class="text-xs text-gray-500 dark:text-gray-400">
-                    Showing {{ count($urls) }} {{ Str::plural('URL', count($urls)) }}
+                    Showing {{ $urls->count() }} {{ Str::plural('URL', $urls->count()) }}
                 </span>
             </div>
         </div>

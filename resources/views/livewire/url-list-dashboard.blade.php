@@ -13,6 +13,20 @@ new class extends Component {
     public $sortDirection = 'desc';
     protected $queryString = ['search', 'sortBy', 'sortDirection'];
 
+    public function placeholder()
+    {
+        return <<<'HTML'
+        <div class="max-w-6xl mx-auto backdrop-blur-sm bg-white/90 dark:bg-neutral-800/90 shadow-xl rounded-3xl p-6 lg:p-8 mt-8 border border-gray-100/40 dark:border-neutral-700/50">
+            <div class="flex items-center justify-center p-12">
+                <div class="flex flex-col items-center">
+                    <div class="h-12 w-12 rounded-full border-4 border-emerald-500/30 border-t-emerald-500 animate-spin"></div>
+                    <p class="mt-4 text-emerald-600 dark:text-emerald-400 text-sm">Loading your lists...</p>
+                </div>
+            </div>
+        </div>
+        HTML;
+    }
+
     public function with(): array
     {
         $query = \App\Models\UrlList::where('user_id', auth()->id())
@@ -30,6 +44,11 @@ new class extends Component {
         return [
             'lists' => $query->paginate(10)
         ];
+    }
+
+    public function mount()
+    {
+        $this->isLoading = false;
     }
 
     public function deleteList($id)
@@ -148,13 +167,13 @@ new class extends Component {
         </div>
         <input 
             type="text" 
-            wire:model.live="search" 
+            wire:model.live.debounce.300ms="search" 
             placeholder="Search lists by name or URL..." 
             class="w-full h-12 rounded-xl border border-gray-200 dark:border-gray-700 pl-12 pr-10 py-3 focus:ring-2 focus:ring-emerald-400/40 focus:border-emerald-400 focus:outline-none bg-white dark:bg-neutral-800/50 text-gray-900 dark:text-gray-100 transition-all duration-200 placeholder-gray-400 dark:placeholder-gray-500"
             wire:loading.class="bg-emerald-50 dark:bg-emerald-900/10"
         >
-        <!-- Interactive loading indicator -->
-        <div wire:loading wire:target="search" class="absolute inset-y-0 right-0 pr-4 flex items-center">
+
+        <div wire:loading.delay wire:target="search" class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none hidden" wire:loading.class.remove="hidden">
             <div class="h-5 w-5">
                 <div class="h-full w-full rounded-full border-2 border-emerald-500/30 border-t-emerald-500 animate-spin"></div>
             </div>
@@ -165,6 +184,8 @@ new class extends Component {
             <button 
                 wire:click="$set('search', '')" 
                 class="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-200"
+                wire:loading.class="hidden"
+                wire:target="search"
             >
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                     <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
