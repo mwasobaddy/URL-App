@@ -19,4 +19,41 @@ class UrlList extends Model
     {
         return $this->hasMany(Url::class);
     }
+    
+    /**
+     * Get the collaborators for this URL list
+     */
+    public function collaborators(): HasMany
+    {
+        return $this->hasMany(ListCollaborator::class);
+    }
+    
+    /**
+     * Get the access requests for this URL list
+     */
+    public function accessRequests(): HasMany
+    {
+        return $this->hasMany(AccessRequest::class);
+    }
+    
+    /**
+     * Check if a user is a collaborator on this list
+     */
+    public function isCollaborator(int $userId): bool
+    {
+        return $this->collaborators()
+            ->where('user_id', $userId)
+            ->exists();
+    }
+    
+    /**
+     * Check if a user has a pending access request for this list
+     */
+    public function hasPendingAccessRequest(int $userId): bool
+    {
+        return $this->accessRequests()
+            ->where('requester_id', $userId)
+            ->where('status', 'pending')
+            ->exists();
+    }
 }

@@ -243,8 +243,45 @@ new class extends Component {
 }; ?>
 
 <div class="space-y-4">
+    <!-- List Title and Controls -->
+    <div class="flex flex-wrap justify-between items-center">
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ $list->name }}</h1>
+        
+        <div class="flex space-x-2 mt-2 sm:mt-0">
+            @if(auth()->check() && $list->user_id === auth()->id())
+                <a href="{{ route('lists.share', $list->custom_url) }}" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg transition flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                    </svg>
+                    Share
+                </a>
+                <a href="{{ route('lists.access', $list->id) }}" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                    Manage Access
+                </a>
+            @elseif(auth()->check() && $list->published)
+                <!-- Display request access component for authenticated users who are not the owner -->
+                <livewire:request-list-access :urlList="$list" />
+            @endif
+        </div>
+    </div>
+
     @if(auth()->check() && $list->user_id === auth()->id())
         <!-- Search and Add URL Button -->
+        <div class="flex justify-between items-center mb-4">
+            <input type="text" 
+                wire:model.live.debounce.300ms="search" 
+                placeholder="Search URLs, titles, or descriptions..." 
+                class="flex-1 rounded-lg border border-gray-300 dark:border-gray-700 px-4 py-2 focus:ring-2 focus:ring-emerald-400 focus:outline-none bg-white dark:bg-neutral-900 text-gray-900 dark:text-gray-100">
+            
+            <button wire:click="$set('showAddUrlModal', true)" class="ml-4 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg transition">
+                Add URL
+            </button>
+        </div>
+    @elseif(auth()->check() && $list->isCollaborator(auth()->id()))
+        <!-- Search and Add URL Button for collaborators -->
         <div class="flex justify-between items-center mb-4">
             <input type="text" 
                 wire:model.live.debounce.300ms="search" 
@@ -288,7 +325,7 @@ new class extends Component {
                             <span class="ml-1">{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
                         @endif
                     </th>
-                    @if(auth()->check() && $list->user_id === auth()->id())
+                    @if(auth()->check() && ($list->user_id === auth()->id() || $list->isCollaborator(auth()->id())))
                         <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                             Actions
                         </th>
@@ -316,7 +353,7 @@ new class extends Component {
                                 @elseif($urlMetadata[$url->id]['error'])
                                     <div class="flex items-center text-gray-500 text-sm">
                                         <svg class="h-4 w-4 text-red-500 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
                                         </svg>
                                         Failed to load metadata
                                         <button wire:click="retryMetadata({{ $url->id }})" class="ml-2 text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300">
@@ -340,21 +377,23 @@ new class extends Component {
                         <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
                             {{ $url->created_at->diffForHumans() }}
                         </td>
-                        @if(auth()->check() && $list->user_id === auth()->id())
+                        @if(auth()->check() && ($list->user_id === auth()->id() || $list->isCollaborator(auth()->id())))
                             <td class="px-6 py-4 text-right text-sm whitespace-nowrap">
                                 <button wire:click="editUrl({{ $url->id }})" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 mr-3">
                                     Edit
                                 </button>
+                                @if($list->user_id === auth()->id())
                                 <button wire:click="deleteUrl({{ $url->id }})" class="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300">
                                     Delete
                                 </button>
+                                @endif
                             </td>
                         @endif
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="{{ auth()->check() && $list->user_id === auth()->id() ? '4' : '3' }}" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
-                            No URLs found. @if(auth()->check() && $list->user_id === auth()->id()) Add your first URL above. @endif
+                        <td colspan="{{ auth()->check() && ($list->user_id === auth()->id() || $list->isCollaborator(auth()->id())) ? '4' : '3' }}" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                            No URLs found. @if(auth()->check() && ($list->user_id === auth()->id() || $list->isCollaborator(auth()->id()))) Add your first URL above. @endif
                         </td>
                     </tr>
                 @endforelse

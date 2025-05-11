@@ -49,14 +49,19 @@
 
             <div class="mt-auto px-4 pb-4">
                 <div class="rounded-xl bg-emerald-50 dark:bg-emerald-900/30 p-3">
-                    <div class="flex items-center gap-3">
-                        <span class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-600 dark:bg-emerald-500 text-white font-bold text-sm">
-                            {{ auth()->user()->initials() }}
-                        </span>
-                        <div class="flex-1 min-w-0">
-                            <div class="truncate font-medium text-emerald-900 dark:text-emerald-100">{{ auth()->user()->name }}</div>
-                            <div class="truncate text-xs text-emerald-700 dark:text-emerald-300">{{ auth()->user()->email }}</div>
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <span class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-600 dark:bg-emerald-500 text-white font-bold text-sm">
+                                {{ auth()->user()->initials() }}
+                            </span>
+                            <div class="flex-1 min-w-0">
+                                <div class="truncate font-medium text-emerald-900 dark:text-emerald-100">{{ auth()->user()->name }}</div>
+                                <div class="truncate text-xs text-emerald-700 dark:text-emerald-300">{{ auth()->user()->email }}</div>
+                            </div>
                         </div>
+                        
+                        <!-- Notifications Dropdown -->
+                        <livewire:notifications-dropdown />
                     </div>
                     <div class="mt-3 flex items-center gap-2 text-sm">
                         <a href="{{ route('settings.profile') }}" class="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-300 hover:text-emerald-900 dark:hover:text-emerald-100" wire:navigate>

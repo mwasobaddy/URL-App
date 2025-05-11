@@ -5,9 +5,9 @@
 - [x] 1. Integrate WireUI for success/error popups (alerts & notifications)
 - [x] 2. Hide sidebar for guests, public lists read-only
 - [x] 3. Redesign sidebar for app branding
-- [ ] 4. Author can grant edit access (not delete)
-- [ ] 5. Users can request edit access
-- [ ] 6. Inbuilt notification system
+- [x] 4. Author can grant edit access (not delete)
+- [x] 5. Users can request edit access
+- [x] 6. Inbuilt notification system
 - [x] 7. Display link metadata in table
 
 ---

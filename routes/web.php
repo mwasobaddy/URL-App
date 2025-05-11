@@ -26,6 +26,8 @@ Route::middleware(['auth'])->group(function () {
     Volt::route('lists', 'url-list-dashboard')->name('lists.dashboard');
     Volt::route('lists/{custom_url}/manage', 'url-list-display')->name('lists.show');
     Volt::route('lists/{custom_url}/share', 'url-list-share')->name('lists.share');
+    // New route for managing list access
+    Route::get('lists/{urlList}/access', App\Livewire\ManageListAccess::class)->name('lists.access');
 });
 
 // Public route for viewing a published list
