@@ -8,7 +8,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class UrlList extends Model
 {
-    protected $fillable = ['user_id', 'name', 'custom_url', 'published'];
+    protected $fillable = ['user_id', 'name', 'custom_url', 'published', 'allow_access_requests'];
+
+    protected $casts = ['allow_access_requests' => 'boolean'];
 
     public function user(): BelongsTo
     {

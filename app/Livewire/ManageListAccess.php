@@ -16,6 +16,7 @@ class ManageListAccess extends Component
     use WithPagination;
     
     public UrlList $urlList;
+    public bool $allowAccessRequests; // Track sharing toggle
     public $emailSearch = '';
     public $showInviteForm = false;
     
@@ -24,6 +25,7 @@ class ManageListAccess extends Component
     public function mount(UrlList $urlList)
     {
         $this->urlList = $urlList;
+        $this->allowAccessRequests = $urlList->allow_access_requests; // initialize toggle
         
         // Check if the current user is the owner of this list
         if (Auth::id() !== $this->urlList->user_id) {
@@ -34,6 +36,16 @@ class ManageListAccess extends Component
     public function toggleInviteForm()
     {
         $this->showInviteForm = !$this->showInviteForm;
+    }
+    
+    public function toggleAccessRequests()
+    {
+        $this->urlList->allow_access_requests = !$this->urlList->allow_access_requests;
+        $this->urlList->save();
+        $this->allowAccessRequests = $this->urlList->allow_access_requests; // update property
+
+        session()->flash('success', 'Sharing settings updated.');
+        $this->dispatch('refreshComponent');
     }
     
     public function approveRequest($requestId)
@@ -60,7 +72,7 @@ class ManageListAccess extends Component
         session()->flash('success', 'Access request approved.');
     }
     
-    public function rejectRequest($requestId)
+    public function denyRequest($requestId)
     {
         $request = AccessRequest::findOrFail($requestId);
         
@@ -69,13 +81,13 @@ class ManageListAccess extends Component
             return;
         }
         
-        // Update the request status
+        // Update the request status to rejected
         $request->update(['status' => 'rejected']);
         
-        // Notify the requester
+        // Notify the requester about rejection
         $request->requester->notify(new AccessResponseNotification($request, false));
         
-        session()->flash('success', 'Access request rejected.');
+        session()->flash('success', 'Access request denied.');
     }
     
     public function removeCollaborator($collaboratorId)

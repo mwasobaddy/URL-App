@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('custom_url')->unique();
             $table->boolean('published')->default(false);
+            $table->boolean('allow_access_requests')->default(false);
             $table->timestamps();
         });
     }

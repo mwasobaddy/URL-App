@@ -158,11 +158,11 @@ new class extends Component {
                 </div>
             </div>
             
-            <div class="col-span-2 flex items-center text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+            <div class="col-span-3 flex items-center text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">
                 <span>Created By</span>
             </div>
             
-            <div wire:click="sort('custom_url')" class="col-span-3 flex items-center text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider cursor-pointer select-none group">
+            <div wire:click="sort('custom_url')" class="col-span-2 flex items-center text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider cursor-pointer select-none group">
                 <div class="flex items-center">
                     <span>Custom URL</span>
                     <div class="ml-1.5 transition-all duration-200">
@@ -237,8 +237,8 @@ new class extends Component {
                     </div>
                     
                     <!-- Author with avatar -->
-                    <div class="md:col-span-2 mb-3 md:mb-0 hidden md:flex items-center">
-                        <div class="flex items-center group/avatar">
+                    <div class="md:col-span-3 mb-3 md:mb-0 hidden md:flex items-center">
+                        <div class="flex items-center group/avatar flex-wrap">
                             <div class="flex-shrink-0 h-8 w-8 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 text-white flex items-center justify-center text-sm font-medium transform group-hover/avatar:scale-110 transition-all duration-300 shadow-md">
                                 {{ substr($list->user->name, 0, 1) }}
                             </div>
@@ -254,7 +254,7 @@ new class extends Component {
                     </div>
                     
                     <!-- URL with animation -->
-                    <div class="md:col-span-3 mb-3 md:mb-0 hidden md:flex">
+                    <div class="md:col-span-2 mb-3 md:mb-0 hidden md:flex">
                         <a 
                             href="{{ url('/lists/' . $list->custom_url) }}" 
                             class="text-emerald-600 dark:text-emerald-500 hover:underline flex items-center group/url relative overflow-hidden" 
