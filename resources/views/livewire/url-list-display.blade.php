@@ -3,6 +3,7 @@
 use Livewire\Volt\Component;
 use WireUi\Traits\WireUiActions;
 use Livewire\WithPagination;
+use Illuminate\Support\Facades\Http;
 use function Livewire\Volt\state;
 use function Livewire\Volt\computed;
 
@@ -18,6 +19,10 @@ new class extends Component {
     public $newUrl = '';
     public $newTitle = '';
     public $newDescription = '';
+    public $urlMetadata = [];
+    public $isLoading = true;
+    public $loadedCount = 0;
+    public $totalUrls = 0;
 
     protected $queryString = ['search', 'sortBy', 'sortDirection'];
     protected $listeners = ['urlAdded' => 'handleUrlAdded', 'urlUpdated' => 'handleUrlUpdated', 'urlDeleted' => 'loadUrls'];
@@ -26,7 +31,6 @@ new class extends Component {
     {
         $query = \App\Models\UrlList::where('custom_url', $custom_url);
         
-        // If this is not a public route, ensure the user owns the list
         if (request()->route()->getName() !== 'lists.public') {
             $query->where('user_id', auth()->id());
         } else {
@@ -37,8 +41,11 @@ new class extends Component {
         $this->loadUrls();
     }
 
-    public function loadUrls()
+    public function with(): array
     {
+        $this->isLoading = true;
+        $this->loadedCount = 0;
+        
         $query = $this->list->urls();
         
         if ($this->search) {
@@ -50,12 +57,70 @@ new class extends Component {
         }
 
         $query->orderBy($this->sortBy, $this->sortDirection);
-        $this->urls = $query->get();
+        $urls = $query->paginate(10);
+        $this->totalUrls = $urls->total();
+        
+        // Initialize metadata for new URLs
+        foreach ($urls as $url) {
+            if (!isset($this->urlMetadata[$url->id])) {
+                $this->urlMetadata[$url->id] = [
+                    'title' => null,
+                    'description' => null,
+                    'loading' => true
+                ];
+                
+                // Fetch metadata in background
+                $this->fetchUrlMetadata($url->id);
+            }
+        }
+
+        if ($this->totalUrls === 0) {
+            $this->isLoading = false;
+        }
+
+        return [
+            'urls' => $urls
+        ];
+    }
+
+    public function fetchUrlMetadata($id)
+    {
+        $url = $this->urls->firstWhere('id', $id);
+        if (!$url || ($this->urlMetadata[$id]['title'] && $this->urlMetadata[$id]['description'])) {
+            $this->incrementLoadedCount();
+            return;
+        }
+
+        try {
+            $response = Http::timeout(5)->get($url->url);
+            if ($response->successful()) {
+                $html = $response->body();
+                preg_match('/<title>(.*?)<\/title>/i', $html, $titleMatches);
+                preg_match('/<meta name="description" content="(.*?)">/i', $html, $descMatches);
+                
+                $this->urlMetadata[$id] = [
+                    'title' => !empty($titleMatches[1]) ? html_entity_decode($titleMatches[1], ENT_QUOTES) : null,
+                    'description' => !empty($descMatches[1]) ? html_entity_decode($descMatches[1], ENT_QUOTES) : null,
+                    'loading' => false
+                ];
+            }
+        } catch (\Exception $e) {
+            $this->urlMetadata[$id]['loading'] = false;
+        }
+        
+        $this->incrementLoadedCount();
+    }
+
+    public function incrementLoadedCount()
+    {
+        $this->loadedCount++;
+        if ($this->loadedCount >= $this->totalUrls) {
+            $this->isLoading = false;
+        }
     }
 
     public function handleUrlAdded($urlData)
     {
-        // Add the new URL to the beginning or end of the list based on sort direction
         if ($this->sortDirection === 'desc') {
             $this->urls->prepend(new \App\Models\Url($urlData));
         } else {
@@ -65,12 +130,10 @@ new class extends Component {
 
     public function handleUrlUpdated($urlData)
     {
-        // Update the URL in the existing collection
         $index = $this->urls->search(fn($item) => $item->id === $urlData['id']);
         if ($index !== false) {
             $this->urls[$index] = new \App\Models\Url($urlData);
         }
-        // Re-sort the collection if needed
         if ($this->sortBy !== 'created_at') {
             $this->loadUrls();
         }
@@ -150,6 +213,17 @@ new class extends Component {
 }; ?>
 
 <div class="space-y-4">
+    @if($isLoading)
+    <div class="fixed inset-0 bg-white/80 dark:bg-neutral-900/80 z-50 flex items-center justify-center">
+        <div class="text-center">
+            <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-emerald-500 border-r-transparent"></div>
+            <div class="mt-4 text-emerald-600 dark:text-emerald-400">
+                Loading metadata ({{ $loadedCount }}/{{ $totalUrls }})...
+            </div>
+        </div>
+    </div>
+    @endif
+
     <div class="flex justify-between items-center mb-4">
         <input type="text" 
                wire:model.live="search" 
@@ -195,7 +269,26 @@ new class extends Component {
                             <a href="{{ $url->url }}" target="_blank" rel="noopener noreferrer" class="text-emerald-600 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 truncate inline-block max-w-xs">
                                 {{ $url->url }}
                             </a>
-                            {{-- display metadata of the link it is not in the database --}}
+                            <div class="text-xs">
+                                @if($urlMetadata[$url->id]['loading'])
+                                    <div class="text-gray-500">Loading metadata...</div>
+                                @else
+                                    @if($urlMetadata[$url->id]['title'])
+                                        <div class="text-gray-600 dark:text-gray-400 font-medium">{{ $urlMetadata[$url->id]['title'] }}</div>
+                                    @endif
+                                    @if($urlMetadata[$url->id]['description'])
+                                        <div class="text-gray-500 dark:text-gray-500 line-clamp-2">{{ $urlMetadata[$url->id]['description'] }}</div>
+                                    @endif
+                                    @if(!$urlMetadata[$url->id]['title'] && !$urlMetadata[$url->id]['description'])
+                                        <div class="text-gray-500">
+                                            No metadata found
+                                            <button wire:click="fetchUrlMetadata({{ $url->id }})" class="text-emerald-600 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 ml-1">
+                                                Retry
+                                            </button>
+                                        </div>
+                                    @endif
+                                @endif
+                            </div>
                         </td>
                         <td class="px-6 py-4">
                             <span class="text-gray-900 dark:text-gray-100">{{ $url->title ?: 'No title' }}</span>
@@ -226,55 +319,21 @@ new class extends Component {
         </table>
     </div>
 
-    <flux:modal wire:model="showAddUrlModal" title="Add New URL" class="w-full max-w-lg">
-        <div class="modal-header">
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Add a new URL to your list</h3>
-            <p class="text-sm text-gray-500 dark:text-gray-400">You can add a URL, title, and description.</p>
+    <!-- Add pagination UI -->
+    @if($urls->hasPages())
+        <div class="mt-6">
+            <div class="bg-white/70 dark:bg-neutral-800/70 backdrop-blur-sm rounded-xl py-3 px-4 shadow-sm border border-gray-100/50 dark:border-neutral-700/50">
+                {{ $urls->links(data: ['scrollTo' => false]) }}
+            </div>
         </div>
-        <div class="modal-body">
-            <p class="text-sm text-gray-500 dark:text-gray-400">Fill in the details below:</p>
+    @else
+        <!-- Status indicator at the bottom -->
+        <div class="mt-6 flex items-center justify-center">
+            <div class="bg-white/70 dark:bg-neutral-800/70 backdrop-blur-sm rounded-full py-1.5 px-4 shadow-sm border border-gray-100/50 dark:border-neutral-700/50">
+                <span class="text-xs text-gray-500 dark:text-gray-400">
+                    Showing {{ count($urls) }} {{ Str::plural('URL', count($urls)) }}
+                </span>
+            </div>
         </div>
-        <div class="p-6">
-            <form wire:submit="addUrl">
-                <div class="space-y-4">
-                    <div>
-                        <label for="url" class="block text-sm font-medium text-gray-700 dark:text-gray-300">URL</label>
-                        <input type="url" 
-                               id="url"
-                               wire:model="newUrl" 
-                               class="w-full rounded-lg border border-gray-300 dark:border-gray-700 px-4 py-2 focus:ring-2 focus:ring-emerald-400 focus:outline-none bg-gray-50 dark:bg-neutral-800 text-gray-900 dark:text-gray-100"
-                               required>
-                    </div>
-                    
-                    <div>
-                        <label for="title" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Title (Optional)</label>
-                        <input type="text" 
-                               id="title"
-                               wire:model="newTitle" 
-                               class="w-full rounded-lg border border-gray-300 dark:border-gray-700 px-4 py-2 focus:ring-2 focus:ring-emerald-400 focus:outline-none bg-gray-50 dark:bg-neutral-800 text-gray-900 dark:text-gray-100">
-                    </div>
-                    
-                    <div>
-                        <label for="description" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Description (Optional)</label>
-                        <textarea id="description"
-                                 wire:model="newDescription" 
-                                 rows="3"
-                                 class="w-full rounded-lg border border-gray-300 dark:border-gray-700 px-4 py-2 focus:ring-2 focus:ring-emerald-400 focus:outline-none bg-gray-50 dark:bg-neutral-800 text-gray-900 dark:text-gray-100"></textarea>
-                    </div>
-                    
-                    <div class="flex justify-end gap-3">
-                        <button type="button" 
-                                wire:click="$set('showAddUrlModal', false)"
-                                class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500">
-                            Cancel
-                        </button>
-                        <button type="submit"
-                                class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500">
-                            Add URL
-                        </button>
-                    </div>
-                </div>
-            </form>
-        </div>
-    </flux:modal>
+    @endif
 </div>
