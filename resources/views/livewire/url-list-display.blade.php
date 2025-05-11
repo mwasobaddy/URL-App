@@ -19,10 +19,9 @@ new class extends Component {
     public $newTitle = '';
     public $newDescription = '';
     public $urlMetadata = [];
+    public $fetchingMetadata = [];
+    public $metadataQueue = [];
     public $isLoading = false;
-    public $loadedCount = 0;
-    public $totalUrls = 0;
-    public $fetchingMetadataFor = [];
 
     protected $queryString = ['search', 'sortBy', 'sortDirection'];
     protected $listeners = ['urlAdded' => 'handleUrlAdded', 'urlUpdated' => 'handleUrlUpdated', 'urlDeleted' => 'resetPage'];
@@ -38,7 +37,6 @@ new class extends Component {
         }
         
         $this->list = $query->firstOrFail();
-        $this->initializeUrlMetadata();
     }
 
     public function with(): array
@@ -55,21 +53,8 @@ new class extends Component {
 
         $query->orderBy($this->sortBy, $this->sortDirection);
         $urls = $query->paginate(10);
-        
-        // Initialize metadata for newly loaded URLs
-        $this->initializeUrlMetadata($urls);
 
-        return [
-            'urls' => $urls
-        ];
-    }
-
-    protected function initializeUrlMetadata($urls = null)
-    {
-        if (!$urls) {
-            $urls = $this->list->urls()->get();
-        }
-        
+        // Initialize metadata for URLs that don't have it yet
         foreach ($urls as $url) {
             if (!isset($this->urlMetadata[$url->id])) {
                 $this->urlMetadata[$url->id] = [
@@ -78,46 +63,97 @@ new class extends Component {
                     'loading' => false,
                     'error' => false
                 ];
-                
-                // Fetch metadata for new URLs
-                $this->fetchUrlMetadata($url->id);
+                $this->metadataQueue[] = $url->id;
             }
         }
+
+        // Process metadata queue in chunks
+        $this->processMetadataQueue();
+
+        return [
+            'urls' => $urls
+        ];
+    }
+
+    protected function processMetadataQueue()
+    {
+        // Process up to 3 URLs at a time
+        $chunk = array_slice($this->metadataQueue, 0, 3);
+        foreach ($chunk as $urlId) {
+            if (!in_array($urlId, $this->fetchingMetadata)) {
+                $this->fetchUrlMetadata($urlId);
+            }
+        }
+        $this->metadataQueue = array_diff($this->metadataQueue, $chunk);
     }
 
     public function fetchUrlMetadata($id)
     {
+        if (in_array($id, $this->fetchingMetadata)) {
+            return;
+        }
+
         $url = $this->list->urls()->find($id);
-        if (!$url || in_array($id, $this->fetchingMetadataFor)) {
+        if (!$url) {
             return;
         }
 
         $this->urlMetadata[$id]['loading'] = true;
         $this->urlMetadata[$id]['error'] = false;
-        $this->fetchingMetadataFor[] = $id;
-        
+        $this->fetchingMetadata[] = $id;
+
         try {
             $response = Http::timeout(5)->get($url->url);
             if ($response->successful()) {
                 $html = $response->body();
-                preg_match('/<title>(.*?)<\/title>/i', $html, $titleMatches);
-                preg_match('/<meta name="description" content="(.*?)">/i', $html, $descMatches);
+                
+                // Extract title
+                preg_match('/<title[^>]*>(.*?)<\/title>/si', $html, $titleMatches);
+                $title = !empty($titleMatches[1]) ? html_entity_decode(trim($titleMatches[1]), ENT_QUOTES) : null;
+                
+                // Extract meta description
+                preg_match('/<meta[^>]*name=["\']description["\'][^>]*content=["\']([^>"\']*)["\'][^>]*>/si', $html, $descMatches);
+                if (empty($descMatches[1])) {
+                    preg_match('/<meta[^>]*content=["\']([^>"\']*)["\'][^>]*name=["\']description["\'][^>]*>/si', $html, $descMatches);
+                }
+                $description = !empty($descMatches[1]) ? html_entity_decode(trim($descMatches[1]), ENT_QUOTES) : null;
                 
                 $this->urlMetadata[$id] = [
-                    'title' => !empty($titleMatches[1]) ? html_entity_decode($titleMatches[1], ENT_QUOTES) : null,
-                    'description' => !empty($descMatches[1]) ? html_entity_decode($descMatches[1], ENT_QUOTES) : null,
+                    'title' => $title,
+                    'description' => $description,
                     'loading' => false,
                     'error' => false
                 ];
+
+                // Save to database
+                $url->update([
+                    'title' => $title,
+                    'description' => $description
+                ]);
             } else {
                 $this->urlMetadata[$id]['error'] = true;
+                $this->urlMetadata[$id]['loading'] = false;
             }
         } catch (\Exception $e) {
             $this->urlMetadata[$id]['error'] = true;
+            $this->urlMetadata[$id]['loading'] = false;
         }
 
-        $this->urlMetadata[$id]['loading'] = false;
-        $this->fetchingMetadataFor = array_diff($this->fetchingMetadataFor, [$id]);
+        $this->fetchingMetadata = array_diff($this->fetchingMetadata, [$id]);
+    }
+
+    public function retryMetadata($id)
+    {
+        if (isset($this->urlMetadata[$id])) {
+            $this->urlMetadata[$id] = [
+                'title' => null,
+                'description' => null,
+                'loading' => false,
+                'error' => false
+            ];
+            $this->metadataQueue[] = $id;
+            $this->processMetadataQueue();
+        }
     }
 
     public function handleUrlAdded($urlData) 
@@ -207,9 +243,10 @@ new class extends Component {
 }; ?>
 
 <div class="space-y-4">
+    <!-- Search and Add URL Button -->
     <div class="flex justify-between items-center mb-4">
         <input type="text" 
-               wire:model.live="search" 
+               wire:model.live.debounce.300ms="search" 
                placeholder="Search URLs, titles, or descriptions..." 
                class="flex-1 rounded-lg border border-gray-300 dark:border-gray-700 px-4 py-2 focus:ring-2 focus:ring-emerald-400 focus:outline-none bg-white dark:bg-neutral-900 text-gray-900 dark:text-gray-100">
         
@@ -218,6 +255,7 @@ new class extends Component {
         </button>
     </div>
 
+    <!-- URLs Table -->
     <div class="overflow-x-auto bg-white dark:bg-neutral-900 rounded-lg shadow">
         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead class="bg-gray-50 dark:bg-neutral-800">
@@ -229,7 +267,7 @@ new class extends Component {
                         @endif
                     </th>
                     <th wire:click="toggleSort('title')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:text-emerald-600 dark:hover:text-emerald-400">
-                        Title
+                        Title & Description
                         @if($sortBy === 'title')
                             <span class="ml-1">{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
                         @endif
@@ -247,42 +285,59 @@ new class extends Component {
             </thead>
             <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
                 @forelse($urls as $url)
-                    <tr wire:key="url-{{ $url->id }}" class="hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors">
+                    <tr wire:key="url-{{ $url->id }}" class="group hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors">
                         <td class="px-6 py-4">
                             <a href="{{ $url->url }}" target="_blank" rel="noopener noreferrer" class="text-emerald-600 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 truncate inline-block max-w-xs">
                                 {{ $url->url }}
                             </a>
-                            <div class="text-xs">
-                                @if($urlMetadata[$url->id]['loading'])
-                                    <div class="text-gray-500">Loading metadata...</div>
-                                @else
-                                    @if($urlMetadata[$url->id]['title'])
-                                        <div class="text-gray-600 dark:text-gray-400 font-medium">{{ $urlMetadata[$url->id]['title'] }}</div>
-                                    @endif
-                                    @if($urlMetadata[$url->id]['description'])
-                                        <div class="text-gray-500 dark:text-gray-500 line-clamp-2">{{ $urlMetadata[$url->id]['description'] }}</div>
-                                    @endif
-                                    @if(!$urlMetadata[$url->id]['title'] && !$urlMetadata[$url->id]['description'])
-                                        <div class="flex items-center text-gray-500">
-                                            <span>{{ $urlMetadata[$url->id]['error'] ? 'Failed to load metadata' : 'No metadata found' }}</span>
-                                            <button wire:click="fetchUrlMetadata({{ $url->id }})" class="text-emerald-600 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 ml-1">
-                                                Retry
-                                            </button>
-                                        </div>
-                                    @endif
-                                @endif
-                            </div>
+                            @if($urlMetadata[$url->id]['loading'])
+                                <div class="mt-1 text-xs text-gray-500">
+                                    <div class="flex items-center">
+                                        <svg class="animate-spin h-4 w-4 text-emerald-500 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        Loading metadata...
+                                    </div>
+                                </div>
+                            @endif
                         </td>
                         <td class="px-6 py-4">
-                            <span class="text-gray-900 dark:text-gray-100">{{ $url->title ?: 'No title' }}</span>
-                            @if($url->description)
-                                <p class="text-sm text-gray-500 dark:text-gray-400 truncate max-w-xs">{{ $url->description }}</p>
+                            @if($urlMetadata[$url->id]['error'])
+                                <div class="flex items-center text-gray-500 text-sm">
+                                    <svg class="h-4 w-4 text-red-500 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                                    </svg>
+                                    Failed to load metadata
+                                    <button wire:click="retryMetadata({{ $url->id }})" class="ml-2 text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300">
+                                        Retry
+                                    </button>
+                                </div>
+                            @else
+                                @if($urlMetadata[$url->id]['title'])
+                                    <div class="text-gray-900 dark:text-gray-100 font-medium">
+                                        {{ $urlMetadata[$url->id]['title'] }}
+                                    </div>
+                                @endif
+                                @if($urlMetadata[$url->id]['description'])
+                                    <div class="mt-1 text-sm text-gray-500 dark:text-gray-400 line-clamp-2">
+                                        {{ $urlMetadata[$url->id]['description'] }}
+                                    </div>
+                                @endif
+                                @if(!$urlMetadata[$url->id]['loading'] && !$urlMetadata[$url->id]['title'] && !$urlMetadata[$url->id]['description'])
+                                    <div class="text-gray-500 text-sm">
+                                        No metadata available
+                                        <button wire:click="retryMetadata({{ $url->id }})" class="ml-2 text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300">
+                                            Retry
+                                        </button>
+                                    </div>
+                                @endif
                             @endif
                         </td>
                         <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
                             {{ $url->created_at->diffForHumans() }}
                         </td>
-                        <td class="px-6 py-4 text-right text-sm">
+                        <td class="px-6 py-4 text-right text-sm whitespace-nowrap">
                             <button wire:click="editUrl({{ $url->id }})" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 mr-3">
                                 Edit
                             </button>
@@ -302,20 +357,20 @@ new class extends Component {
         </table>
     </div>
 
-    @if($urls->hasPages())
-        <div class="mt-6">
+    <!-- Pagination -->
+    <div class="mt-6">
+        @if($urls->hasPages())
             <div class="bg-white/70 dark:bg-neutral-800/70 backdrop-blur-sm rounded-xl py-3 px-4 shadow-sm border border-gray-100/50 dark:border-neutral-700/50">
                 {{ $urls->links(data: ['scrollTo' => false]) }}
             </div>
-        </div>
-    @else
-        <!-- Status indicator at the bottom -->
-        <div class="mt-6 flex items-center justify-center">
-            <div class="bg-white/70 dark:bg-neutral-800/70 backdrop-blur-sm rounded-full py-1.5 px-4 shadow-sm border border-gray-100/50 dark:border-neutral-700/50">
-                <span class="text-xs text-gray-500 dark:text-gray-400">
-                    Showing {{ $urls->count() }} {{ Str::plural('URL', $urls->count()) }}
-                </span>
+        @else
+            <div class="flex items-center justify-center">
+                <div class="bg-white/70 dark:bg-neutral-800/70 backdrop-blur-sm rounded-full py-1.5 px-4 shadow-sm border border-gray-100/50 dark:border-neutral-700/50">
+                    <span class="text-xs text-gray-500 dark:text-gray-400">
+                        Showing {{ $urls->count() }} {{ Str::plural('URL', $urls->count()) }}
+                    </span>
+                </div>
             </div>
-        </div>
-    @endif
+        @endif
+    </div>
 </div>

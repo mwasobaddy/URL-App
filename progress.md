@@ -8,7 +8,7 @@
 - [ ] 4. Author can grant edit access (not delete)
 - [ ] 5. Users can request edit access
 - [ ] 6. Inbuilt notification system
-- [ ] 7. Display link metadata in table
+- [x] 7. Display link metadata in table
 
 ---
 
