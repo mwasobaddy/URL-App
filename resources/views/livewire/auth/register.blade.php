@@ -51,6 +51,7 @@ new #[Layout('components.layouts.auth')] class extends Component {
             autofocus
             autocomplete="name"
             :placeholder="__('Full name')"
+            class="focus:ring-emerald-500 focus:border-emerald-500 dark:focus:ring-emerald-500 dark:focus:border-emerald-500"
         />
 
         <!-- Email Address -->
@@ -61,6 +62,7 @@ new #[Layout('components.layouts.auth')] class extends Component {
             required
             autocomplete="email"
             placeholder="email@example.com"
+            class="focus:ring-emerald-500 focus:border-emerald-500 dark:focus:ring-emerald-500 dark:focus:border-emerald-500"
         />
 
         <!-- Password -->
@@ -72,6 +74,7 @@ new #[Layout('components.layouts.auth')] class extends Component {
             autocomplete="new-password"
             :placeholder="__('Password')"
             viewable
+            class="focus:ring-emerald-500 focus:border-emerald-500 dark:focus:ring-emerald-500 dark:focus:border-emerald-500"
         />
 
         <!-- Confirm Password -->
@@ -83,10 +86,11 @@ new #[Layout('components.layouts.auth')] class extends Component {
             autocomplete="new-password"
             :placeholder="__('Confirm password')"
             viewable
+            class="focus:ring-emerald-500 focus:border-emerald-500 dark:focus:ring-emerald-500 dark:focus:border-emerald-500"
         />
 
         <div class="flex items-center justify-end">
-            <flux:button type="submit" variant="primary" class="w-full">
+            <flux:button type="submit" variant="primary" class="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-sm transition-all duration-300 hover:shadow-md dark:from-emerald-600 dark:to-teal-600 dark:hover:from-emerald-500 dark:hover:to-teal-500">
                 {{ __('Create account') }}
             </flux:button>
         </div>
@@ -94,6 +98,6 @@ new #[Layout('components.layouts.auth')] class extends Component {
 
     <div class="space-x-1 rtl:space-x-reverse text-center text-sm text-zinc-600 dark:text-zinc-400">
         {{ __('Already have an account?') }}
-        <flux:link :href="route('login')" wire:navigate>{{ __('Log in') }}</flux:link>
+        <flux:link :href="route('login')" wire:navigate class="text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300">{{ __('Log in') }}</flux:link>
     </div>
 </div>

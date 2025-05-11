@@ -4,7 +4,6 @@
         @include('partials.head')
     </head>
     <body class="min-h-screen bg-white dark:bg-zinc-800">
-        @if(auth()->check() && !request()->routeIs('lists.public'))
         <flux:sidebar sticky stashable class="border-e border-emerald-200 dark:border-emerald-800 bg-gradient-to-b from-white to-emerald-50/20 dark:from-neutral-950 dark:to-emerald-950/20">
             <div class="flex items-center gap-3 px-6 py-4 border-b border-emerald-100 dark:border-emerald-900">
                 <div class="flex items-center justify-center size-10 rounded-xl bg-emerald-600 dark:bg-emerald-500">
@@ -79,33 +78,6 @@
                 </div>
             </div>
         </flux:sidebar>
-        @else
-        <!-- Simple header for guests and public list views -->
-        <flux:sidebar sticky stashable class="border-e border-emerald-200 dark:border-emerald-800 bg-gradient-to-b from-white to-emerald-50/20 dark:from-neutral-950 dark:to-emerald-950/20">
-            <div class="flex items-center gap-3 px-6 py-4 border-b border-emerald-100 dark:border-emerald-900">
-                <div class="flex items-center justify-center size-10 rounded-xl bg-emerald-600 dark:bg-emerald-500">
-                    <x-app-logo-icon class="size-6 fill-current text-white" />
-                </div>
-                <span class="font-bold text-xl text-emerald-950 dark:text-emerald-100 tracking-tight">URL-App</span>
-            </div>
-
-            <nav class="flex-1 px-4 py-6">
-                <div class="space-y-6">
-                    <!-- Main Navigation -->
-                    <div class="space-y-2">
-                        <div class="px-3 text-xs font-medium text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">
-                            Available Links
-                        </div>
-                        <div class="space-y-1">
-
-                            <a href="{{ route('login') }}" class="text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 font-medium" wire:navigate>Login</a>
-                            <a href="{{ route('register') }}" class="inline-flex items-center justify-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 transition-colors" wire:navigate>Get Started</a>
-                        </div>
-                    </div>
-                </div>
-            </nav>
-        </flux:sidebar>
-        @endif
 
         {{ $slot }}
 

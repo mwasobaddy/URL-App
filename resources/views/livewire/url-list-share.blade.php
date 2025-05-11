@@ -14,7 +14,7 @@ new class extends Component {
         $this->list = \App\Models\UrlList::where('custom_url', $custom_url)
             ->where('user_id', auth()->id())
             ->firstOrFail();
-        $this->shareUrl = url('/l/' . $this->list->custom_url);
+        $this->shareUrl = url('/lists/' . $this->list->custom_url);
     }
 
     public function togglePublish()

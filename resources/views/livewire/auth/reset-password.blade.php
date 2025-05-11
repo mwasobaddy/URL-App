@@ -56,7 +56,7 @@ new #[Layout('components.layouts.auth')] class extends Component {
         // If the password was successfully reset, we will redirect the user back to
         // the application's home authenticated view. If there is an error we can
         // redirect them back to where they came from with their error message.
-        if ($status != Password::PasswordReset) {
+        if ($status != Password::PASSWORD_RESET) {
             $this->addError('email', __($status));
 
             return;
@@ -82,6 +82,7 @@ new #[Layout('components.layouts.auth')] class extends Component {
             type="email"
             required
             autocomplete="email"
+            class="focus:ring-emerald-500 focus:border-emerald-500 dark:focus:ring-emerald-500 dark:focus:border-emerald-500"
         />
 
         <!-- Password -->
@@ -93,6 +94,7 @@ new #[Layout('components.layouts.auth')] class extends Component {
             autocomplete="new-password"
             :placeholder="__('Password')"
             viewable
+            class="focus:ring-emerald-500 focus:border-emerald-500 dark:focus:ring-emerald-500 dark:focus:border-emerald-500"
         />
 
         <!-- Confirm Password -->
@@ -104,10 +106,11 @@ new #[Layout('components.layouts.auth')] class extends Component {
             autocomplete="new-password"
             :placeholder="__('Confirm password')"
             viewable
+            class="focus:ring-emerald-500 focus:border-emerald-500 dark:focus:ring-emerald-500 dark:focus:border-emerald-500"
         />
 
         <div class="flex items-center justify-end">
-            <flux:button type="submit" variant="primary" class="w-full">
+            <flux:button type="submit" variant="primary" class="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-sm transition-all duration-300 hover:shadow-md dark:from-emerald-600 dark:to-teal-600 dark:hover:from-emerald-500 dark:hover:to-teal-500">
                 {{ __('Reset password') }}
             </flux:button>
         </div>

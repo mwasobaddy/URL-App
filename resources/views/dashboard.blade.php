@@ -11,4 +11,7 @@
             </div>
         </div>
     </div>
+
+    <!-- Public URL Lists Section -->
+    <livewire:publishedurllistscomponent />
 </x-layouts.app>

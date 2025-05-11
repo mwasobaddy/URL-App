@@ -31,6 +31,6 @@ Route::middleware(['auth'])->group(function () {
 });
 
 // Public route for viewing a published list
-Volt::route('l/{custom_url}', 'url-list-display')->name('lists.public');
+Volt::route('lists/{custom_url}', 'url-list-display')->name('lists.public');
 
 require __DIR__.'/auth.php';

@@ -89,6 +89,7 @@ new #[Layout('components.layouts.auth')] class extends Component {
             autofocus
             autocomplete="email"
             placeholder="email@example.com"
+            class="focus:ring-emerald-500 focus:border-emerald-500 dark:focus:ring-emerald-500 dark:focus:border-emerald-500"
         />
 
         <!-- Password -->
@@ -101,10 +102,11 @@ new #[Layout('components.layouts.auth')] class extends Component {
                 autocomplete="current-password"
                 :placeholder="__('Password')"
                 viewable
+                class="focus:ring-emerald-500 focus:border-emerald-500 dark:focus:ring-emerald-500 dark:focus:border-emerald-500"
             />
 
             @if (Route::has('password.request'))
-                <flux:link class="absolute end-0 top-0 text-sm" :href="route('password.request')" wire:navigate>
+                <flux:link class="absolute end-0 top-0 text-sm text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300" :href="route('password.request')" wire:navigate>
                     {{ __('Forgot your password?') }}
                 </flux:link>
             @endif
@@ -114,14 +116,14 @@ new #[Layout('components.layouts.auth')] class extends Component {
         <flux:checkbox wire:model="remember" :label="__('Remember me')" />
 
         <div class="flex items-center justify-end">
-            <flux:button variant="primary" type="submit" class="w-full">{{ __('Log in') }}</flux:button>
+            <flux:button variant="primary" type="submit" class="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-sm transition-all duration-300 hover:shadow-md dark:from-emerald-600 dark:to-teal-600 dark:hover:from-emerald-500 dark:hover:to-teal-500">{{ __('Log in') }}</flux:button>
         </div>
     </form>
 
     @if (Route::has('register'))
         <div class="space-x-1 rtl:space-x-reverse text-center text-sm text-zinc-600 dark:text-zinc-400">
             {{ __('Don\'t have an account?') }}
-            <flux:link :href="route('register')" wire:navigate>{{ __('Sign up') }}</flux:link>
+            <flux:link :href="route('register')" wire:navigate class="text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300">{{ __('Sign up') }}</flux:link>
         </div>
     @endif
 </div>
