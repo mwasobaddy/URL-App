@@ -221,7 +221,7 @@ new class extends Component {
                             @endif
                         </div>
                         <div class="text-xs text-gray-500 dark:text-gray-400 mt-1 md:hidden">
-                            URL: <a href="{{ url('/lists/' . $list->custom_url) }}" target="_blank" class="text-emerald-600 dark:text-emerald-500 hover:underline">{{ $list->custom_url }}</a>
+                            URL: <a href="{{ url('/lists/' . $list->custom_url) }}" target="_blank" class="text-emerald-600 dark:text-emerald-500 hover:underline" wire:navigate>{{ $list->custom_url }}</a>
                         </div>
                         <div class="text-xs text-gray-500 dark:text-gray-400 mt-1 md:hidden">
                             Created by: {{ $list->user->name }}
@@ -257,8 +257,8 @@ new class extends Component {
                     <div class="md:col-span-3 mb-3 md:mb-0 hidden md:flex">
                         <a 
                             href="{{ url('/lists/' . $list->custom_url) }}" 
-                            target="_blank" 
                             class="text-emerald-600 dark:text-emerald-500 hover:underline flex items-center group/url relative overflow-hidden" 
+                            wire:navigate
                         >
                             <span class="truncate group-hover/url:text-emerald-700 dark:group-hover/url:text-emerald-400 transition-all duration-300">
                                 {{ $list->custom_url }}
@@ -289,6 +289,7 @@ new class extends Component {
                         <a 
                             href="{{ url('/lists/' . $list->custom_url) }}" 
                             class="relative overflow-hidden inline-flex items-center px-3.5 py-1.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white rounded-lg text-xs font-medium transition-all duration-300 shadow-sm hover:shadow group/btn" 
+                            wire:navigate
                         >
                             <span class="relative z-10 flex items-center">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1.5" viewBox="0 0 20 20" fill="currentColor">
@@ -306,6 +307,7 @@ new class extends Component {
                             <a 
                                 href="{{ url('/lists/' . $list->custom_url) }}" 
                                 class="relative overflow-hidden inline-flex items-center px-3.5 py-1.5 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 text-white rounded-lg text-xs font-medium transition-all duration-300 shadow-sm hover:shadow group/btn2" 
+                                wire:navigate
                             >
                                 <span class="relative z-10 flex items-center">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1.5" viewBox="0 0 20 20" fill="currentColor">
@@ -347,14 +349,14 @@ new class extends Component {
                     
                     <!-- New - CTA for empty state -->
                     @auth
-                        <a href="{{ route('lists.create') }}" class="mt-6 inline-flex items-center px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-sm font-medium transition-all duration-200 shadow-sm hover:shadow">
+                        <a href="{{ route('lists.create') }}" class="mt-6 inline-flex items-center px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-sm font-medium transition-all duration-200 shadow-sm hover:shadow" wire:navigate>
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
                                 <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
                             </svg>
                             Create your first public list
                         </a>
                     @else
-                        <a href="{{ route('login') }}" class="mt-6 inline-flex items-center px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-sm font-medium transition-all duration-200 shadow-sm hover:shadow">
+                        <a href="{{ route('login') }}" class="mt-6 inline-flex items-center px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-sm font-medium transition-all duration-200 shadow-sm hover:shadow" wire:navigate>
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
                                 <path fill-rule="evenodd" d="M3 3a1 1 0 011 1v12a1 1 0 11-2 0V4a1 1 0 011-1zm7.707 3.293a1 1 0 010 1.414L9.414 9H17a1 1 0 110 2H9.414l1.293 1.293a1 1 0 01-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0z" clip-rule="evenodd" />
                             </svg>
