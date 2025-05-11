@@ -1,18 +1,14 @@
 <x-layouts.app :title="__('Dashboard')">
-    <div class="flex h-full w-full flex-1 flex-col gap-4 rounded-xl">
-        <div class="grid auto-rows-min gap-4 md:grid-cols-3">
-            <div class="relative aspect-video overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-700">
-                <x-placeholder-pattern class="absolute inset-0 size-full stroke-gray-900/20 dark:stroke-neutral-100/20" />
+    <div class="max-w-3xl mx-auto mt-12">
+        <div class="bg-white dark:bg-neutral-900 shadow-lg rounded-xl p-8 flex flex-col items-center">
+            <h1 class="text-3xl font-bold text-emerald-600 mb-4">Welcome to Your Dashboard</h1>
+            <p class="text-gray-600 dark:text-gray-300 mb-8 text-center">
+                Manage your URL lists, create new ones, and share your favorite resources with ease.
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4 w-full justify-center mb-6">
+                <a href="{{ route('lists.dashboard') }}" class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 px-6 rounded-lg text-center transition" wire:navigate>My URL Lists</a>
+                <a href="{{ route('lists.create') }}" class="w-full sm:w-auto bg-emerald-100 hover:bg-emerald-200 text-emerald-700 font-semibold py-3 px-6 rounded-lg text-center transition" wire:navigate>Create New List</a>
             </div>
-            <div class="relative aspect-video overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-700">
-                <x-placeholder-pattern class="absolute inset-0 size-full stroke-gray-900/20 dark:stroke-neutral-100/20" />
-            </div>
-            <div class="relative aspect-video overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-700">
-                <x-placeholder-pattern class="absolute inset-0 size-full stroke-gray-900/20 dark:stroke-neutral-100/20" />
-            </div>
-        </div>
-        <div class="relative h-full flex-1 overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-700">
-            <x-placeholder-pattern class="absolute inset-0 size-full stroke-gray-900/20 dark:stroke-neutral-100/20" />
         </div>
     </div>
 </x-layouts.app>
