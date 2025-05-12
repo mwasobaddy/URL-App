@@ -18,6 +18,7 @@ new class extends Component {
     public $editListName = '';
     public $editListDescription = '';
     public $editListPublished = false;
+    public $showDeleteListModal = false; // Added for delete confirmation
     public $urlMetadata = [];
     public $fetchingMetadata = [];
     public $metadataQueue = [];
@@ -371,6 +372,46 @@ new class extends Component {
             );
         }
     }
+
+    public function confirmDeleteList()
+    {
+        $this->showDeleteListModal = true;
+    }
+
+    public function closeDeleteListModal()
+    {
+        $this->showDeleteListModal = false;
+    }
+
+    public function deleteList()
+    {
+        if (auth()->id() !== $this->list->user_id) {
+            $this->notification()->error('Unauthorized', 'You are not authorized to delete this list.');
+            $this->showDeleteListModal = false;
+            return;
+        }
+
+        try {
+            $listName = $this->list->name;
+            $this->list->delete(); // Eloquent model delete
+
+            $this->notification()->success(
+                'List Deleted',
+                "The list '{$listName}' was deleted successfully."
+            );
+
+            $this->showDeleteListModal = false;
+            // Redirect to a relevant page, e.g., dashboard
+            return redirect()->route('lists.dashboard'); 
+        } catch (\Exception $e) {
+            // Log::error('Error deleting list: ' . $e->getMessage()); // Consider logging the error
+            $this->notification()->error(
+                'Error',
+                'There was a problem deleting the list. Please try again.'
+            );
+            $this->showDeleteListModal = false;
+        }
+    }
 }; ?>
 
 <div class="max-w-6xl mx-auto backdrop-blur-sm bg-white/90 dark:bg-neutral-800/90 shadow-xl rounded-3xl p-6 lg:p-8 mt-8 border border-gray-100/40 dark:border-neutral-700/50">
@@ -437,6 +478,13 @@ new class extends Component {
                     </span>
                     <span class="absolute top-0 right-full w-12 h-full bg-white/30 transform rotate-12 translate-x-0 transition-transform duration-1000 ease-out group-hover:translate-x-[400%]"></span>
                 </a>
+                <!-- Delete List Button -->
+                <button wire:click="confirmDeleteList" class="relative overflow-hidden inline-flex items-center px-4 py-2 bg-gradient-to-r from-red-500 to-rose-500 hover:from-red-600 hover:to-rose-600 text-white rounded-lg text-sm font-medium transition-all duration-200 shadow-sm hover:shadow">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    {{ __('Delete List') }}
+                </button>
             @elseif(auth()->check() && $list->published)
                 <!-- Display request access component for authenticated users who are not the owner -->
                 <livewire:request-list-access :urlList="$list" />
@@ -806,6 +854,34 @@ new class extends Component {
                     </flux:button>
                 </div>
             </form>
+        </flux:modal>
+    @endif
+
+    <!-- Delete List Confirmation Modal -->
+    @if(auth()->check() && $list->user_id === auth()->id())
+        <flux:modal wire:model.live="showDeleteListModal" name="delete-list-modal" title="{{ __('Confirm Delete List') }}" class="w-auto">
+            <div class="relative mb-8">
+                <h2 class="text-3xl md:text-4xl font-extrabold tracking-tight">
+                    <span class="bg-clip-text text-transparent bg-gradient-to-br from-red-500 to-rose-400">
+                        {{ __('Delete List?') }}
+                    </span>
+                </h2>
+                <p class="mt-2 text-sm text-gray-500 dark:text-gray-400 max-w-md">
+                    {{ __('Are you sure you want to delete the list') }} "<strong>{{ $list->name }}</strong>"? 
+                    {{ __('This action cannot be undone, and all associated URLs will also be permanently removed.') }}
+                </p>
+                <div class="absolute -bottom-3 left-0 h-1 w-16 bg-gradient-to-r from-red-500 to-rose-400 rounded-full"></div>
+            </div>
+
+            <div class="mt-6 flex justify-end gap-x-2">
+                <flux:button flat type="button" wire:click="closeDeleteListModal">
+                    {{ __('Cancel') }}
+                </flux:button>
+                <flux:button type="button" wire:click="deleteList" class="bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg text-sm px-4 py-2 text-center items-center transition-all duration-200 shadow-sm hover:shadow-md" wire:loading.attr="disabled" wire:target="deleteList">
+                    <span wire:loading.remove wire:target="deleteList">{{ __('Delete List') }}</span>
+                    <span wire:loading wire:target="deleteList">{{ __('Deleting...') }}</span>
+                </flux:button>
+            </div>
         </flux:modal>
     @endif
 </div>
