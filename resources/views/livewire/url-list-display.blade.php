@@ -30,6 +30,7 @@ new class extends Component {
         'title' => '',
         'description' => ''
     ];
+    public $isFetchingMetadataForNewUrl = false; // New property for loading state
 
     protected $queryString = ['search', 'sortBy', 'sortDirection'];
     protected $listeners = ['urlAdded' => 'handleUrlAdded', 'urlUpdated' => 'handleUrlUpdated', 'urlDeleted' => 'resetPage', 'listUpdated' => '$refresh'];
@@ -161,6 +162,65 @@ new class extends Component {
             ];
             $this->metadataQueue[] = $id;
             $this->processMetadataQueue();
+        }
+    }
+
+    public function updatedUrlDataUrl(string $value): void
+    {
+        // Only fetch if not editing and URL field is not empty
+        if ($this->isEditing || empty(trim($value))) {
+            $this->isFetchingMetadataForNewUrl = false;
+            return;
+        }
+
+        $trimmedValue = trim($value);
+
+        // Basic URL validation - ensure it starts with http or https
+        if (!preg_match('/^https?:\/\//i', $trimmedValue) || !filter_var($trimmedValue, FILTER_VALIDATE_URL)) {
+            // If URL becomes invalid or doesn't have a scheme, clear previously fetched data if title/description are still default from fetch
+            // For simplicity, we'll just return. User can clear manually or type a new valid URL.
+            $this->isFetchingMetadataForNewUrl = false;
+            return;
+        }
+
+        $this->isFetchingMetadataForNewUrl = true;
+
+        try {
+            $response = \Illuminate\Support\Facades\Http::timeout(5)->get($trimmedValue);
+
+            if ($response->successful()) {
+                $html = $response->body();
+                $doc = new \DOMDocument();
+                libxml_use_internal_errors(true); // Suppress HTML5 parsing errors
+                if (!empty($html)) {
+                    $doc->loadHTML($html);
+                }
+                libxml_clear_errors();
+                $xpath = new \DOMXPath($doc);
+
+                // Fetch title
+                $titleNode = $xpath->query('//title')->item(0);
+                $fetchedTitle = $titleNode ? trim($titleNode->textContent) : null;
+
+                // Fetch meta description
+                $descriptionNode = $xpath->query("//meta[@name='description']/@content")->item(0);
+                $fetchedDescription = $descriptionNode ? trim($descriptionNode->nodeValue) : null;
+
+                // Update title field if it's empty (or only whitespace) and we fetched a title
+                if (empty(trim($this->urlData['title'])) && $fetchedTitle) {
+                    $this->urlData['title'] = $fetchedTitle;
+                }
+
+                // Update description field if it's empty (or only whitespace) and we fetched a description
+                if (empty(trim($this->urlData['description'])) && $fetchedDescription) {
+                    $this->urlData['description'] = $fetchedDescription;
+                }
+            }
+        } catch (\Throwable $e) {
+            // Log error or handle silently. For now, we'll proceed without fetched meta.
+            // report($e); // Uncomment to log errors
+        } finally {
+            $this->isFetchingMetadataForNewUrl = false;
         }
     }
 
@@ -506,8 +566,8 @@ new class extends Component {
     <div class="bg-white/50 dark:bg-neutral-800/50 rounded-2xl overflow-hidden shadow-sm border border-gray-100 dark:border-neutral-700/50 backdrop-blur-sm">
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
             @forelse($urls as $url)
-                <div wire:key="url-{{ $url->id }}" class="bg-white dark:bg-neutral-900 rounded-xl shadow-sm border border-gray-100 dark:border-neutral-700/50 overflow-hidden hover:shadow-md transition-shadow duration-300">
-                    <a href="{{ $url->url }}" target="_blank" rel="noopener noreferrer" class="block p-4 pb-0">
+                <div wire:key="url-{{ $url->id }}" class="flex flex-col bg-white dark:bg-neutral-900 rounded-xl shadow-sm border border-gray-100 dark:border-neutral-700/50 overflow-hidden hover:shadow-md transition-shadow duration-300">
+                    <a href="{{ $url->url }}" target="_blank" rel="noopener noreferrer" class="block p-4 pb-0 flex-1">
                         <div class="flex items-center mb-3">
                             <div class="h-8 w-8 rounded-md flex items-center justify-center bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 mr-3">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -631,26 +691,44 @@ new class extends Component {
                 </div>
 
                 <flux:input
-                    wire:model="urlData.url"
+                    wire:model.live.debounce.750ms="urlData.url"
                     label="URL"
                     placeholder="https://example.com"
                     required
                 />
-                <flux:input
-                    wire:model="urlData.title"
-                    label="Title (Optional)"
-                    placeholder="Page title"
-                />
-                <flux:textarea
-                    wire:model="urlData.description"
-                    label="Description (Optional)"
-                    placeholder="Brief description of the URL"
-                    rows="3"
-                />
+                <div class="relative">
+                    <flux:input
+                        wire:model="urlData.title"
+                        label="Title (Optional)"
+                        placeholder="Page title"
+                    />
+                    <div x-show="$wire.isFetchingMetadataForNewUrl && !$wire.isEditing" class="absolute top-0 right-0 mt-2 mr-2" wire:loading wire:target="updatedUrlDataUrl">
+                        <svg class="animate-spin h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </div>
+                </div>
+                <div class="relative">
+                    <flux:textarea
+                        wire:model.live="urlData.description"
+                        label="Description (Optional)"
+                        placeholder="Brief description of the URL"
+                        rows="3"
+                    />
+                    <div x-show="$wire.isFetchingMetadataForNewUrl && !$wire.isEditing" class="absolute top-0 right-0 mt-2 mr-2" wire:loading wire:target="updatedUrlDataUrl">
+                         <svg class="animate-spin h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </div>
+                </div>
             </div>
             <div class="mt-6 flex justify-end gap-x-2">
-                <flux:button flat type="button" wire:click="closeUrlModal">Cancel</flux:button>
-                <flux:button type="submit" primary wire:loading.attr="disabled">
+                <flux:button flat type="button" wire:click="closeUrlModal">
+                    {{ __('Cancel') }}
+                </flux:button>
+                <flux:button type="submit" primary wire:loading.attr="disabled" class="relative items-center font-medium justify-center gap-2 whitespace-nowrap disabled:opacity-75 dark:disabled:opacity-75 disabled:cursor-default disabled:pointer-events-none h-10 text-sm rounded-lg px-4 inline-flex  bg-[var(--color-accent)] hover:bg-[color-mix(in_oklab,_var(--color-accent),_transparent_10%)] text-[var(--color-accent-foreground)] border border-black/10 dark:border-0 shadow-[inset_0px_1px_--theme(--color-white/.2)] [[data-flux-button-group]_&]:border-e-0 [:is([data-flux-button-group]>&:last-child,_[data-flux-button-group]_:last-child>&)]:border-e-[1px] dark:[:is([data-flux-button-group]>&:last-child,_[data-flux-button-group]_:last-child>&)]:border-e-0 dark:[:is([data-flux-button-group]>&:last-child,_[data-flux-button-group]_:last-child>&)]:border-s-[1px] [:is([data-flux-button-group]>&:not(:first-child),_[data-flux-button-group]_:not(:first-child)>&)]:border-s-[color-mix(in_srgb,var(--color-accent-foreground),transparent_85%)] *:transition-opacity [&[disabled]>:not([data-flux-loading-indicator])]:opacity-0 [&[disabled]>[data-flux-loading-indicator]]:opacity-100 [&[disabled]]:pointer-events-none bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-sm transition-all duration-300 hover:shadow-md dark:from-emerald-600 dark:to-teal-600 dark:hover:from-emerald-500 dark:hover:to-teal-500">
                     {{ $isEditing ? 'Update URL' : 'Add URL' }}
                 </flux:button>
             </div>
