@@ -166,7 +166,7 @@
                                 {{ $list->urls()->count() }} {{ Str::plural('link', $list->urls()->count()) }}
                             </div>
                             
-                            <a href="{{ route('lists.show', $list) }}" class="text-emerald-600 dark:text-emerald-500 hover:text-emerald-700 dark:hover:text-emerald-400 group/url relative overflow-hidden flex items-center text-sm font-medium transition-colors duration-200" wire:navigate>
+                            <a href="{{ route('lists.show', $list->custom_url) }}" class="text-emerald-600 dark:text-emerald-500 hover:text-emerald-700 dark:hover:text-emerald-400 group/url relative overflow-hidden flex items-center text-sm font-medium transition-colors duration-200" wire:navigate>
                                 View
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1.5 transform group-hover/url:translate-x-1 transition-all duration-200" viewBox="0 0 20 20" fill="currentColor">
                                     <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />

@@ -879,7 +879,7 @@ new class extends Component {
                 </flux:button>
                 <flux:button type="button" wire:click="deleteList" class="bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg text-sm px-4 py-2 text-center items-center transition-all duration-200 shadow-sm hover:shadow-md" wire:loading.attr="disabled" wire:target="deleteList">
                     <span wire:loading.remove wire:target="deleteList">{{ __('Delete List') }}</span>
-                    <span wire:loading wire:target="deleteList">{{ __('Deleting...') }}</span>
+                    <span class="hidden" wire:loading.class.remove="hidden" wire:target="deleteList" >{{ __('Deleting...') }}</span>
                 </flux:button>
             </div>
         </flux:modal>
