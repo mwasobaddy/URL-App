@@ -8,6 +8,7 @@ new class extends Component {
     use WireUiActions;
 
     public string $name = '';
+    public string $description = ''; // Added description property
     public string $custom_url = '';
     public ?string $generatedUrl = null;
     public string $placeholderUrl = '';
@@ -37,18 +38,20 @@ new class extends Component {
 
             $this->validate([
                 'name' => 'required|string|max:255',
+                'description' => 'nullable|string|max:1000', // Added description validation
                 'custom_url' => 'required|alpha_dash|unique:url_lists,custom_url',
             ]);
 
             $list = \App\Models\UrlList::create([
                 'user_id' => auth()->id(),
                 'name' => $this->name,
+                'description' => $this->description, // Added description to create()
                 'custom_url' => $this->custom_url,
                 'published' => false,
             ]);
             
             $this->generatedUrl = $list->custom_url;
-            $this->reset(['name', 'custom_url']);
+            $this->reset(['name', 'description', 'custom_url']); // Added description to reset()
             $this->placeholderUrl = $this->generateUniqueUrl();
             
             $this->notification()->success(
@@ -137,6 +140,30 @@ new class extends Component {
                 </div>
             </div>
             @error('name') 
+                <p class="mt-1 text-sm text-red-600 dark:text-red-500 flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                    </svg>
+                    {{ $message }}
+                </p>
+            @enderror
+        </div>
+
+        <!-- List description input -->
+        <div class="relative group">
+            <label for="description" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 group-focus-within:text-emerald-500 transition-colors duration-200">
+                Description <span class="text-gray-400 dark:text-gray-500">(optional)</span>
+            </label>
+            <div class="relative">
+                <textarea 
+                    id="description" 
+                    wire:model.defer="description" 
+                    rows="3"
+                    class="w-full p-4 rounded-xl border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-emerald-400/40 focus:border-emerald-400 focus:outline-none bg-white dark:bg-neutral-800/50 text-gray-900 dark:text-gray-100 transition-all duration-200 placeholder-gray-400 dark:placeholder-gray-500"
+                    placeholder="What kind of links will this list contain?"
+                ></textarea>
+            </div>
+            @error('description') 
                 <p class="mt-1 text-sm text-red-600 dark:text-red-500 flex items-center">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
                         <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />

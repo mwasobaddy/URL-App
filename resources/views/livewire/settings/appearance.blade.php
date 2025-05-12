@@ -15,11 +15,11 @@ new class extends Component {
                 x-data 
                 variant="segmented" 
                 x-model="$flux.appearance" 
-                class="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-zinc-900/60 dark:to-zinc-900/80 p-4 rounded-lg border border-gray-100/40 dark:border-neutral-700/50"
+                class="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-zinc-900/60 dark:to-zinc-900/80 p-4 rounded-lg border border-gray-100/40 dark:border-neutral-700/50 h-auto"
             >
-                <flux:radio value="light" icon="sun" class="hover:bg-white dark:hover:bg-zinc-800">{{ __('Light') }}</flux:radio>
-                <flux:radio value="dark" icon="moon" class="hover:bg-white dark:hover:bg-zinc-800">{{ __('Dark') }}</flux:radio>
-                <flux:radio value="system" icon="computer-desktop" class="hover:bg-white dark:hover:bg-zinc-800">{{ __('System') }}</flux:radio>
+                <flux:radio value="light" icon="sun" class="hover:bg-white dark:hover:bg-zinc-800 py-2">{{ __('Light') }}</flux:radio>
+                <flux:radio value="dark" icon="moon" class="hover:bg-white dark:hover:bg-zinc-800 py-2">{{ __('Dark') }}</flux:radio>
+                <flux:radio value="system" icon="computer-desktop" class="hover:bg-white dark:hover:bg-zinc-800 py-2">{{ __('System') }}</flux:radio>
             </flux:radio.group>
             
             <div class="mt-4">

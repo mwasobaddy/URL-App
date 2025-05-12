@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->string('name');
+            $table->text('description')->nullable(); // Added description column
             $table->string('custom_url')->unique();
             $table->boolean('published')->default(false);
             $table->boolean('allow_access_requests')->default(false);

@@ -107,8 +107,13 @@ new class extends Component {
             return;
         }
 
-        $this->urlMetadata[$id]['loading'] = true;
-        $this->urlMetadata[$id]['error'] = false;
+        // Use database title/description as initial fallback
+        $this->urlMetadata[$id] = [
+            'title' => $url->title, // Initialize with DB title
+            'description' => $url->description, // Initialize with DB description
+            'loading' => true,
+            'error' => false
+        ];
         $this->fetchingMetadata[] = $id;
 
         try {
@@ -116,16 +121,14 @@ new class extends Component {
             if ($response->successful()) {
                 $html = $response->body();
                 
-                // Extract title
                 preg_match('/<title[^>]*>(.*?)<\/title>/si', $html, $titleMatches);
-                $title = !empty($titleMatches[1]) ? html_entity_decode(trim($titleMatches[1]), ENT_QUOTES) : null;
+                $title = !empty($titleMatches[1]) ? html_entity_decode(trim($titleMatches[1]), ENT_QUOTES) : $url->title; // Fallback to DB title
                 
-                // Extract meta description
                 preg_match('/<meta[^>]*name=["\']description["\'][^>]*content=["\']([^>"\']*)["\'][^>]*>/si', $html, $descMatches);
                 if (empty($descMatches[1])) {
                     preg_match('/<meta[^>]*content=["\']([^>"\']*)["\'][^>]*name=["\']description["\'][^>]*>/si', $html, $descMatches);
                 }
-                $description = !empty($descMatches[1]) ? html_entity_decode(trim($descMatches[1]), ENT_QUOTES) : null;
+                $description = !empty($descMatches[1]) ? html_entity_decode(trim($descMatches[1]), ENT_QUOTES) : $url->description; // Fallback to DB description
                 
                 $this->urlMetadata[$id] = [
                     'title' => $title,
@@ -134,18 +137,26 @@ new class extends Component {
                     'error' => false
                 ];
 
-                // Save to database
-                $url->update([
-                    'title' => $title,
-                    'description' => $description
-                ]);
+                // Save to database only if fetched values are different or if DB values were null
+                if ($title !== $url->title || $description !== $url->description || is_null($url->title) || is_null($url->description)) {
+                    $url->update([
+                        'title' => $title,
+                        'description' => $description
+                    ]);
+                }
             } else {
                 $this->urlMetadata[$id]['error'] = true;
                 $this->urlMetadata[$id]['loading'] = false;
+                // Keep existing DB title/description if fetch fails
+                $this->urlMetadata[$id]['title'] = $url->title;
+                $this->urlMetadata[$id]['description'] = $url->description;
             }
         } catch (\Exception $e) {
             $this->urlMetadata[$id]['error'] = true;
             $this->urlMetadata[$id]['loading'] = false;
+            // Keep existing DB title/description on exception
+            $this->urlMetadata[$id]['title'] = $url->title;
+            $this->urlMetadata[$id]['description'] = $url->description;
         }
 
         $this->fetchingMetadata = array_diff($this->fetchingMetadata, [$id]);
@@ -327,7 +338,7 @@ new class extends Component {
     public function editList()
     {
         $this->editListName = $this->list->name;
-        $this->editListDescription = $this->list->description;
+        $this->editListDescription = $this->list->description; // Populate description
         $this->editListPublished = $this->list->published;
         $this->showEditListModal = true;
     }
@@ -336,13 +347,13 @@ new class extends Component {
     {
         $this->validate([
             'editListName' => 'required|min:3|max:255',
-            'editListDescription' => 'nullable|max:500',
+            'editListDescription' => 'nullable|string|max:1000', // Added validation for description
         ]);
 
         try {
             $this->list->update([
                 'name' => $this->editListName,
-                'description' => $this->editListDescription,
+                'description' => $this->editListDescription, // Save description
                 'published' => $this->editListPublished,
             ]);
 
@@ -380,7 +391,7 @@ new class extends Component {
             </h2>
             <p class="mt-2 text-sm text-gray-500 dark:text-gray-400 max-w-md">
                 @if($list->description)
-                    {{ $list->description }}
+                    {{ $list->description }} <!-- Display list description -->
                 @else
                     A curated collection of URLs
                 @endif
@@ -576,6 +587,8 @@ new class extends Component {
                             </div>
                             @if(isset($urlMetadata[$url->id]) && $urlMetadata[$url->id]['title'])
                                 <h3 class="font-medium text-gray-900 dark:text-white truncate flex-1">{{ $urlMetadata[$url->id]['title'] }}</h3>
+                            @elseif($url->title) {{-- Fallback to DB title --}}
+                                <h3 class="font-medium text-gray-900 dark:text-white truncate flex-1">{{ $url->title }}</h3>
                             @else
                                 <h3 class="font-medium text-gray-900 dark:text-white truncate flex-1">{{ parse_url($url->url, PHP_URL_HOST) }}</h3>
                             @endif
@@ -588,7 +601,7 @@ new class extends Component {
                                 </div>
                                 Loading metadata...
                             </div>
-                        @elseif(isset($urlMetadata[$url->id]) && $urlMetadata[$url->id]['error'])
+                        @elseif(isset($urlMetadata[$url->id]) && $urlMetadata[$url->id]['error'] && !$url->title && !$url->description)
                             <div class="text-sm text-gray-500 dark:text-gray-400 mb-3">
                                 <div class="flex items-center mb-1">
                                     <svg class="h-4 w-4 text-amber-500 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
@@ -601,6 +614,11 @@ new class extends Component {
                         @elseif(isset($urlMetadata[$url->id]) && $urlMetadata[$url->id]['description'])
                             <div class="text-sm text-gray-500 dark:text-gray-400 mb-3">
                                 <div class="line-clamp-3">{{ $urlMetadata[$url->id]['description'] }}</div>
+                                <div class="mt-2 truncate text-xs opacity-70">{{ $url->url }}</div>
+                            </div>
+                        @elseif($url->description) {{-- Fallback to DB description --}}
+                            <div class="text-sm text-gray-500 dark:text-gray-400 mb-3">
+                                <div class="line-clamp-3">{{ $url->description }}</div>
                                 <div class="mt-2 truncate text-xs opacity-70">{{ $url->url }}</div>
                             </div>
                         @else
@@ -677,7 +695,7 @@ new class extends Component {
     <flux:modal wire:model.live="showUrlModal" name="url-modal" variant="default" title="{{ $isEditing ? 'Edit URL' : 'Add New URL' }}" class="w-auto">
         <form wire:submit.prevent="saveUrl">
             <div class="space-y-4">
-                <div class="relative">
+                <div class="relative mb-8">
                     <h2 class="text-3xl md:text-4xl font-extrabold tracking-tight">
                         <span class="bg-clip-text text-transparent bg-gradient-to-br from-emerald-500 to-teal-400">
                             {{ $isEditing ? 'Edit URL' : 'Add New URL' }}
@@ -740,7 +758,7 @@ new class extends Component {
         <flux:modal wire:model.live="showEditListModal" title="Edit Your List" class="w-auto">
             <form wire:submit="updateList">
                 <div class="space-y-4">
-                    <div class="relative">
+                    <div class="relative mb-8">
                         <h2 class="text-3xl md:text-4xl font-extrabold tracking-tight">
                             <span class="bg-clip-text text-transparent bg-gradient-to-br from-emerald-500 to-teal-400">
                                 {{ __('List Settings') }}
@@ -763,7 +781,7 @@ new class extends Component {
                     <flux:textarea
                         wire:model="editListDescription"
                         label="Description (Optional)"
-                        placeholder="Brief description of the list"
+                        placeholder="What kind of links will this list contain?"
                         rows="3"
                     />
                     
