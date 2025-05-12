@@ -119,16 +119,16 @@ new class extends Component {
         </div>
         
         <div class="mt-6 sm:mt-0 relative group">
-            <a href="{{ route('lists.create') }}" class="inline-flex items-center px-5 py-2.5 bg-gradient-to-br from-emerald-500 to-teal-400 hover:from-emerald-600 hover:to-teal-500 text-white rounded-xl transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5" wire:navigate>
-                <span class="relative z-10 flex items-center">
+            <!-- Decorative blob behind button (subtle micro-interaction) -->
+            <div class="absolute inset-0 rounded-xl bg-emerald-300/20 dark:bg-emerald-700/20 blur-xl transition-all duration-300 opacity-0 group-hover:opacity-100 scale-0 group-hover:scale-110"></div>
+            <a href="{{ route('lists.create') }}" class="relative z-10 inline-flex items-center px-5 py-2.5 bg-gradient-to-br from-emerald-500 to-teal-400 hover:from-emerald-600 hover:to-teal-500 text-white rounded-xl transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5" wire:navigate>
+                <span class="flex items-center">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
                         <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
                     </svg>
                     Create New List
                 </span>
             </a>
-            <!-- Decorative blob behind button (subtle micro-interaction) -->
-            <div class="absolute inset-0 rounded-xl bg-emerald-300/20 dark:bg-emerald-700/20 blur-xl transition-all duration-300 opacity-0 group-hover:opacity-100 scale-0 group-hover:scale-110"></div>
         </div>
     </div>
     

@@ -15,16 +15,21 @@ new class extends Component {
     public $sortBy = 'created_at';
     public $sortDirection = 'desc';
     public $showAddUrlModal = false;
+    public $showAddLinkModal = false;
+    public $showEditListModal = false;
     public $newUrl = '';
     public $newTitle = '';
     public $newDescription = '';
+    public $editListName = '';
+    public $editListDescription = '';
+    public $editListPublished = false;
     public $urlMetadata = [];
     public $fetchingMetadata = [];
     public $metadataQueue = [];
     public $isLoading = false;
 
     protected $queryString = ['search', 'sortBy', 'sortDirection'];
-    protected $listeners = ['urlAdded' => 'handleUrlAdded', 'urlUpdated' => 'handleUrlUpdated', 'urlDeleted' => 'resetPage'];
+    protected $listeners = ['urlAdded' => 'handleUrlAdded', 'urlUpdated' => 'handleUrlUpdated', 'urlDeleted' => 'resetPage', 'listUpdated' => '$refresh'];
 
     public function mount($custom_url)
     {
@@ -240,6 +245,43 @@ new class extends Component {
             );
         }
     }
+
+    public function editList()
+    {
+        $this->editListName = $this->list->name;
+        $this->editListDescription = $this->list->description;
+        $this->editListPublished = $this->list->published;
+        $this->showEditListModal = true;
+    }
+
+    public function updateList()
+    {
+        $this->validate([
+            'editListName' => 'required|min:3|max:255',
+            'editListDescription' => 'nullable|max:500',
+        ]);
+
+        try {
+            $this->list->update([
+                'name' => $this->editListName,
+                'description' => $this->editListDescription,
+                'published' => $this->editListPublished,
+            ]);
+
+            $this->notification()->success(
+                'List Updated',
+                'Your list was updated successfully.'
+            );
+
+            $this->showEditListModal = false;
+            $this->dispatch('listUpdated');
+        } catch (\Exception $e) {
+            $this->notification()->error(
+                'Error',
+                'There was a problem updating the list. Please try again.'
+            );
+        }
+    }
 }; ?>
 
 <div class="max-w-6xl mx-auto backdrop-blur-sm bg-white/90 dark:bg-neutral-800/90 shadow-xl rounded-3xl p-6 lg:p-8 mt-8 border border-gray-100/40 dark:border-neutral-700/50">
@@ -250,6 +292,13 @@ new class extends Component {
                 <span class="bg-clip-text text-transparent bg-gradient-to-br from-emerald-500 to-teal-400">
                     {{ $list->name }}
                 </span>
+                @if(auth()->check() && $list->user_id === auth()->id())
+                    <button wire:click="editList" class="inline-block ml-2 text-emerald-500 hover:text-emerald-600 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                        </svg>
+                    </button>
+                @endif
             </h2>
             <p class="mt-2 text-sm text-gray-500 dark:text-gray-400 max-w-md">
                 @if($list->description)
@@ -262,7 +311,20 @@ new class extends Component {
             <div class="absolute -bottom-3 left-0 h-1 w-16 bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full"></div>
         </div>
         
-        <div class="flex space-x-2 mt-6 sm:mt-0">
+        <div class="flex space-x-2 mt-6 sm:mt-0 space-y-2 sm:space-y-0 flex-wrap">
+            @if(auth()->check() && ($list->user_id === auth()->id() || $list->isCollaborator(auth()->id())))
+                <!-- Add Link Button -->
+                <button wire:click="$set('showAddLinkModal', true)" class="relative overflow-hidden inline-flex items-center px-4 py-2 bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white rounded-lg text-sm font-medium transition-all duration-200 shadow-sm hover:shadow">
+                    <span class="flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
+                        </svg>
+                        Add Link
+                    </span>
+                    <span class="absolute top-0 right-full w-12 h-full bg-white/30 transform rotate-12 translate-x-0 transition-transform duration-1000 ease-out group-hover:translate-x-[400%]"></span>
+                </button>
+            @endif
+            
             @if(auth()->check() && $list->user_id === auth()->id())
                 <a href="{{ route('lists.share', $list->custom_url) }}" class="relative overflow-hidden inline-flex items-center px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white rounded-lg text-sm font-medium transition-all duration-200 shadow-sm hover:shadow" wire:navigate>
                     <span class="flex items-center">
@@ -427,7 +489,7 @@ new class extends Component {
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
             @forelse($urls as $url)
                 <div wire:key="url-{{ $url->id }}" class="bg-white dark:bg-neutral-900 rounded-xl shadow-sm border border-gray-100 dark:border-neutral-700/50 overflow-hidden hover:shadow-md transition-shadow duration-300">
-                    <a href="{{ $url->url }}" target="_blank" rel="noopener noreferrer" class="block p-4">
+                    <a href="{{ $url->url }}" target="_blank" rel="noopener noreferrer" class="block p-4 pb-0">
                         <div class="flex items-center mb-3">
                             <div class="h-8 w-8 rounded-md flex items-center justify-center bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 mr-3">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -466,32 +528,32 @@ new class extends Component {
                         @else
                             <div class="text-sm text-gray-500 dark:text-gray-400 mb-3 truncate">{{ $url->url }}</div>
                         @endif
+                    </a>
                         
-                        <div class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mt-4 pt-3 border-t border-gray-100 dark:border-neutral-800">
-                            <span>Added {{ $url->created_at->diffForHumans() }}</span>
-                            
-                            @if(auth()->check() && ($list->user_id === auth()->id() || $list->isCollaborator(auth()->id())))
-                                <div class="flex space-x-2">
-                                    <button wire:click="editUrl({{ $url->id }})" class="text-emerald-600 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 transition-colors duration-200">
+                    <div class="pb-4 px-4 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mt-4 pt-3 border-t border-gray-100 dark:border-neutral-800">
+                        <span>Added {{ $url->created_at->diffForHumans() }}</span>
+                        
+                        @if(auth()->check() && ($list->user_id === auth()->id() || $list->isCollaborator(auth()->id())))
+                            <div class="flex space-x-2">
+                                <button type="button" wire:click="editUrl({{ $url->id }})" class="text-emerald-600 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 transition-colors duration-200">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                        <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                                    </svg>
+                                </button>
+                                @if($list->user_id === auth()->id())
+                                    <button type="button" wire:click="deleteUrl({{ $url->id }})" class="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 transition-colors duration-200">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                            <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                                            <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
                                         </svg>
                                     </button>
-                                    @if($list->user_id === auth()->id())
-                                        <button wire:click="deleteUrl({{ $url->id }})" class="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 transition-colors duration-200">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                                <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
-                                            </svg>
-                                        </button>
-                                    @endif
-                                </div>
-                            @else
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-emerald-500" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fill-rule="evenodd" d="M5.05 3.636a1 1 0 010 1.414 7 7 0 000 9.9 1 1 0 11-1.414 1.414 9 9 0 010-12.728 1 1 0 011.414 0zm9.9 0a1 1 0 011.414 0 9 9 0 010 12.728 1 1 0 11-1.414-1.414 7 7 0 000-9.9 1 1 0 010-1.414zM7.879 6.464a1 1 0 010 1.414 3 3 0 000 4.243 1 1 0 11-1.414 1.414 5 5 0 010-7.07 1 1 0 011.414 0zm4.242 0a1 1 0 011.414 0 5 5 0 010 7.072 1 1 0 01-1.414-1.415 3 3 0 000-4.242 1 1 0 010-1.415z" clip-rule="evenodd" />
-                                </svg>
-                            @endif
-                        </div>
-                    </a>
+                                @endif
+                            </div>
+                        @else
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-emerald-500" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M5.05 3.636a1 1 0 010 1.414 7 7 0 000 9.9 1 1 0 11-1.414 1.414 9 9 0 010-12.728 1 1 0 011.414 0zm9.9 0a1 1 0 011.414 0 9 9 0 010 12.728 1 1 0 11-1.414-1.414 7 7 0 000-9.9 1 1 0 010-1.414zM7.879 6.464a1 1 0 010 1.414 3 3 0 000 4.243 1 1 0 11-1.414 1.414 5 5 0 010-7.07 1 1 0 011.414 0zm4.242 0a1 1 0 011.414 0 5 5 0 010 7.072 1 1 0 01-1.414-1.415 3 3 0 000-4.242 1 1 0 010-1.415z" clip-rule="evenodd" />
+                            </svg>
+                        @endif
+                    </div>
                 </div>
             @empty
                 <div class="col-span-full py-16 px-4 text-center">
@@ -533,42 +595,174 @@ new class extends Component {
 
     <!-- Add URL Modal -->
     @if(auth()->check() && ($list->user_id === auth()->id() || $list->isCollaborator(auth()->id())))
-        <x-dialog wire:model.live="showAddUrlModal" title="Add URL" max-width="lg">
+        <flux:modal wire:model.live="showAddUrlModal" title="Add New URL to List" max-width="lg">
             <form wire:submit="addUrl">
                 <div class="space-y-4">
-                    <x-input
+                    <div class="relative">
+                        <h2 class="text-3xl md:text-4xl font-extrabold tracking-tight">
+                            <span class="bg-clip-text text-transparent bg-gradient-to-br from-emerald-500 to-teal-400">
+                                {{ __('Enter URL Details') }}
+                            </span>
+                        </h2>
+                        <p class="mt-2 text-sm text-gray-500 dark:text-gray-400 max-w-md">
+                            {{ __('Add a new URL to your collection with optional metadata.') }}
+                        </p>
+                        <!-- Decorative element -->
+                        <div class="absolute -bottom-3 left-0 h-1 w-16 bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full"></div>
+                    </div>
+                    
+                    <flux:input
                         wire:model="newUrl"
                         label="URL"
                         placeholder="https://example.com"
                         required
                     />
                     
-                    <x-input
+                    <flux:input
                         wire:model="newTitle"
                         label="Title (Optional)"
                         placeholder="Page title"
                     />
                     
-                    <x-textarea
+                    <flux:textarea
                         wire:model="newDescription"
                         label="Description (Optional)"
                         placeholder="Brief description of the URL"
                         rows="3"
                     />
                     
-                    <div class="text-sm text-gray-500">
-                        Note: If title and description are left empty, we'll try to fetch them automatically.
+                    <div class="text-sm text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 p-3 rounded-lg flex items-start">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-emerald-500 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                        </svg>
+                        <span>If title and description are left empty, we'll try to fetch them automatically.</span>
                     </div>
                 </div>
-
-                <x-slot name="footer">
-                    <div class="flex justify-end gap-x-2">
-                        <x-button flat label="Cancel" wire:click="$toggle('showAddUrlModal')" />
-                        <x-button type="submit" primary label="Add URL" wire:loading.attr="disabled" />
-                    </div>
-                </x-slot>
+                
+                <div class="mt-6 flex justify-end gap-x-2">
+                    <flux:button flat wire:click="$toggle('showAddUrlModal')">
+                        {{ __('Cancel') }}
+                    </flux:button>
+                    <flux:button type="submit" primary wire:loading.attr="disabled" class="relative items-center font-medium justify-center gap-2 whitespace-nowrap disabled:opacity-75 dark:disabled:opacity-75 disabled:cursor-default disabled:pointer-events-none h-10 text-sm rounded-lg px-4 inline-flex  bg-[var(--color-accent)] hover:bg-[color-mix(in_oklab,_var(--color-accent),_transparent_10%)] text-[var(--color-accent-foreground)] border border-black/10 dark:border-0 shadow-[inset_0px_1px_--theme(--color-white/.2)] [[data-flux-button-group]_&]:border-e-0 [:is([data-flux-button-group]>&:last-child,_[data-flux-button-group]_:last-child>&)]:border-e-[1px] dark:[:is([data-flux-button-group]>&:last-child,_[data-flux-button-group]_:last-child>&)]:border-e-0 dark:[:is([data-flux-button-group]>&:last-child,_[data-flux-button-group]_:last-child>&)]:border-s-[1px] [:is([data-flux-button-group]>&:not(:first-child),_[data-flux-button-group]_:not(:first-child)>&)]:border-s-[color-mix(in_srgb,var(--color-accent-foreground),transparent_85%)] *:transition-opacity [&[disabled]>:not([data-flux-loading-indicator])]:opacity-0 [&[disabled]>[data-flux-loading-indicator]]:opacity-100 [&[disabled]]:pointer-events-none bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-sm transition-all duration-300 hover:shadow-md dark:from-emerald-600 dark:to-teal-600 dark:hover:from-emerald-500 dark:hover:to-teal-500">
+                        {{ __('Add URL') }}
+                    </flux:button>
+                </div>
             </form>
-        </x-dialog>
+        </flux:modal>
+    @endif
+
+    <!-- Add Link Modal -->
+    @if(auth()->check() && ($list->user_id === auth()->id() || $list->isCollaborator(auth()->id())))
+        <flux:modal wire:model.live="showAddLinkModal" title="Add New Link to List" max-width="lg">
+            <form wire:submit="addUrl">
+                <div class="space-y-4">
+                    <div class="relative">
+                        <h2 class="text-3xl md:text-4xl font-extrabold tracking-tight">
+                            <span class="bg-clip-text text-transparent bg-gradient-to-br from-emerald-500 to-teal-400">
+                                {{ __('Enter Link Details') }}
+                            </span>
+                        </h2>
+                        <p class="mt-2 text-sm text-gray-500 dark:text-gray-400 max-w-md">
+                            {{ __('Add a new link to your collection with optional metadata.') }}
+                        </p>
+                        <!-- Decorative element -->
+                        <div class="absolute -bottom-3 left-0 h-1 w-16 bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full"></div>
+                    </div>
+                    
+                    <flux:input
+                        wire:model="newUrl"
+                        label="URL"
+                        placeholder="https://example.com"
+                        required
+                    />
+                    
+                    <flux:input
+                        wire:model="newTitle"
+                        label="Title (Optional)"
+                        placeholder="Page title"
+                    />
+                    
+                    <flux:textarea
+                        wire:model="newDescription"
+                        label="Description (Optional)"
+                        placeholder="Brief description of the URL"
+                        rows="3"
+                    />
+                    
+                    <div class="text-sm text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 p-3 rounded-lg flex items-start">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-emerald-500 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                        </svg>
+                        <span>If title and description are left empty, we'll try to fetch them automatically.</span>
+                    </div>
+                </div>
+                
+                <div class="mt-6 flex justify-end gap-x-2">
+                    <flux:button flat wire:click="$toggle('showAddLinkModal')">
+                        {{ __('Cancel') }}
+                    </flux:button>
+                    <flux:button type="submit" primary wire:loading.attr="disabled" class="relative items-center font-medium justify-center gap-2 whitespace-nowrap disabled:opacity-75 dark:disabled:opacity-75 disabled:cursor-default disabled:pointer-events-none h-10 text-sm rounded-lg px-4 inline-flex  bg-[var(--color-accent)] hover:bg-[color-mix(in_oklab,_var(--color-accent),_transparent_10%)] text-[var(--color-accent-foreground)] border border-black/10 dark:border-0 shadow-[inset_0px_1px_--theme(--color-white/.2)] [[data-flux-button-group]_&]:border-e-0 [:is([data-flux-button-group]>&:last-child,_[data-flux-button-group]_:last-child>&)]:border-e-[1px] dark:[:is([data-flux-button-group]>&:last-child,_[data-flux-button-group]_:last-child>&)]:border-e-0 dark:[:is([data-flux-button-group]>&:last-child,_[data-flux-button-group]_:last-child>&)]:border-s-[1px] [:is([data-flux-button-group]>&:not(:first-child),_[data-flux-button-group]_:not(:first-child)>&)]:border-s-[color-mix(in_srgb,var(--color-accent-foreground),transparent_85%)] *:transition-opacity [&[disabled]>:not([data-flux-loading-indicator])]:opacity-0 [&[disabled]>[data-flux-loading-indicator]]:opacity-100 [&[disabled]]:pointer-events-none bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-sm transition-all duration-300 hover:shadow-md dark:from-emerald-600 dark:to-teal-600 dark:hover:from-emerald-500 dark:hover:to-teal-500">
+                        {{ __('Add Link') }}
+                    </flux:button>
+                </div>
+            </form>
+        </flux:modal>
+    @endif
+
+    <!-- Edit List Modal -->
+    @if(auth()->check() && $list->user_id === auth()->id())
+        <flux:modal wire:model.live="showEditListModal" title="Edit Your List" max-width="lg">
+            <form wire:submit="updateList">
+                <div class="space-y-4">
+                    <div class="relative">
+                        <h2 class="text-3xl md:text-4xl font-extrabold tracking-tight">
+                            <span class="bg-clip-text text-transparent bg-gradient-to-br from-emerald-500 to-teal-400">
+                                {{ __('List Settings') }}
+                            </span>
+                        </h2>
+                        <p class="mt-2 text-sm text-gray-500 dark:text-gray-400 max-w-md">
+                            {{ __('You can change the name, description, and visibility of your list.') }}
+                        </p>
+                        <!-- Decorative element -->
+                        <div class="absolute -bottom-3 left-0 h-1 w-16 bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full"></div>
+                    </div>
+                    
+                    <flux:input
+                        wire:model="editListName"
+                        label="List Name"
+                        placeholder="Enter list name"
+                        required
+                    />
+                    
+                    <flux:textarea
+                        wire:model="editListDescription"
+                        label="Description (Optional)"
+                        placeholder="Brief description of the list"
+                        rows="3"
+                    />
+                    
+                    <div class="bg-gray-50 dark:bg-gray-800/50 p-3 rounded-lg">
+                        <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Visibility Settings</h4>
+                        <x-checkbox
+                            wire:model="editListPublished"
+                            label="Make this list public (published)"
+                        />
+                        <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                            When published, your list will be accessible to anyone with the link.
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="mt-6 flex justify-end gap-x-2">
+                    <flux:button flat wire:click="$toggle('showEditListModal')">
+                        {{ __('Cancel') }}
+                    </flux:button>
+                    <flux:button type="submit" primary wire:loading.attr="disabled" class="relative items-center font-medium justify-center gap-2 whitespace-nowrap disabled:opacity-75 dark:disabled:opacity-75 disabled:cursor-default disabled:pointer-events-none h-10 text-sm rounded-lg px-4 inline-flex  bg-[var(--color-accent)] hover:bg-[color-mix(in_oklab,_var(--color-accent),_transparent_10%)] text-[var(--color-accent-foreground)] border border-black/10 dark:border-0 shadow-[inset_0px_1px_--theme(--color-white/.2)] [[data-flux-button-group]_&]:border-e-0 [:is([data-flux-button-group]>&:last-child,_[data-flux-button-group]_:last-child>&)]:border-e-[1px] dark:[:is([data-flux-button-group]>&:last-child,_[data-flux-button-group]_:last-child>&)]:border-e-0 dark:[:is([data-flux-button-group]>&:last-child,_[data-flux-button-group]_:last-child>&)]:border-s-[1px] [:is([data-flux-button-group]>&:not(:first-child),_[data-flux-button-group]_:not(:first-child)>&)]:border-s-[color-mix(in_srgb,var(--color-accent-foreground),transparent_85%)] *:transition-opacity [&[disabled]>:not([data-flux-loading-indicator])]:opacity-0 [&[disabled]>[data-flux-loading-indicator]]:opacity-100 [&[disabled]]:pointer-events-none bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-sm transition-all duration-300 hover:shadow-md dark:from-emerald-600 dark:to-teal-600 dark:hover:from-emerald-500 dark:hover:to-teal-500">
+                        {{ __('Save Changes') }}
+                    </flux:button>
+                </div>
+            </form>
+        </flux:modal>
     @endif
 
     <!-- URL Edit Modal is handled by a separate component through events -->
