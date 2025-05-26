@@ -15,16 +15,19 @@
 - [x] Install and configure Spatie Laravel Permissions package
 - [x] Define roles (free, premium, admin)
 - [x] Create base permissions structure
-- [x] Implement role-based middleware
+- [x] Implement RoleService for role-based feature access
 - [x] Add role assignment on user registration
+- [x] Create Volt-based role checks for UI components
+- [x] Implement service-based permission validation
 
 ### 2. Subscription System Base
 - [x] Create subscription models and migrations
 - [x] Implement plan limits and features
 - [x] Setup subscription state management
-- [ ] Create subscription middleware
-- [ ] Implement usage tracking system
+- [ ] Implement SubscriptionService for managing subscription states and checks
+- [ ] Implement usage tracking system using services
 - [ ] Create subscription service provider
+- [ ] Implement Volt-based feature gating components
 
 ### 3. PayPal Integration
 Documentation References:
@@ -61,17 +64,20 @@ Setup Tasks:
 - [ ] Create plan migration strategies
 
 ### 5. User Subscription Features
-- [ ] Create subscription dashboard UI
-- [ ] Implement plan selection interface
+- [ ] Create Volt-based subscription dashboard UI
+- [ ] Implement reactive plan selection interface
 - [ ] Add payment method management
-  - [ ] PayPal payment setup flow
-  - [ ] Payment method validation
-  - [ ] Payment method update handling
-- [ ] Create subscription history view
-- [ ] Implement usage statistics display
-- [ ] Add plan upgrade/downgrade flow
-- [ ] Implement subscription pause/resume functionality
-- [ ] Add subscription renewal handling
+  - [ ] PayPal payment setup flow with Volt components
+  - [ ] Real-time payment method validation
+  - [ ] Reactive payment method update handling
+- [ ] Create subscription history view with live updates
+- [ ] Implement real-time usage statistics display
+- [ ] Add reactive plan upgrade/downgrade flow
+- [ ] Create Volt-based subscription controls
+  - [ ] Pause/Resume functionality
+  - [ ] Real-time status updates
+  - [ ] Automatic UI refresh
+- [ ] Add subscription renewal handling with notifications
 
 ### 6. Admin Dashboard
 - [ ] Create subscription management interface
@@ -122,13 +128,19 @@ Tasks:
 - [ ] Add loading states for payment processing
 
 ### 10. Testing & Security
-- [ ] Implement PayPal sandbox testing
-- [ ] Create test suite for subscription flows
-- [ ] Add payment gateway error simulation
-- [ ] Implement security headers for payment pages
-- [ ] Add request validation for payment endpoints
+- [ ] Implement PayPal sandbox testing with service mocks
+- [ ] Create test suite for subscription services and Volt components
+- [ ] Add payment gateway error simulation using service mocks
+- [ ] Implement security measures in services
+- [ ] Add validation in services and Volt components
 - [ ] Create subscription flow integration tests
-- [ ] Implement error boundary testing
+  - [ ] Service layer tests
+  - [ ] Volt component tests
+  - [ ] E2E subscription flow tests
+- [ ] Implement error handling
+  - [ ] Service layer error handling
+  - [ ] Volt component error boundaries
+  - [ ] Real-time error feedback
 
 ---
 
