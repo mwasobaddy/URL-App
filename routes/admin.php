@@ -32,6 +32,11 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     // Analytics
     Route::get('/analytics', \App\Livewire\Admin\Analytics::class)->name('analytics');
     
+    // Revenue
+    Route::prefix('revenue')->name('revenue.')->group(function () {
+        Route::get('/', \App\Livewire\Admin\Revenue\AnalyticsDashboard::class)->name('analytics');
+    });
+    
     // System Logs
     Route::get('/logs', \App\Livewire\Admin\Logs::class)->name('logs');
     
