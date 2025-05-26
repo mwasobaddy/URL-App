@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.1.0] - 2025-05-26
 
+## Added
+- PayPalTokenService for OAuth2 token management
+  - Automatic token refresh
+  - Token caching
+  - Token status checking
+- PayPalAPIService for robust API interactions
+  - Rate limiting handling
+  - Idempotency key generation
+  - Retry mechanism with exponential backoff
+  - Comprehensive error handling
+
 ### Changed
 - Updated project architecture to prioritize Volt components and services over middleware
 - Restructured subscription system to use service-based approach
