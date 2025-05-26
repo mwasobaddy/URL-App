@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Automatic token refresh
   - Token caching
   - Token status checking
+- Enhanced PayPalSubscriptionService
+  - Subscription plan creation and syncing
+  - Payment processing and verification
+  - Success/failure handling
+  - Trial period support
 - PayPalAPIService for robust API interactions
   - Rate limiting handling
   - Idempotency key generation

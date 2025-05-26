@@ -5,10 +5,21 @@ namespace App\Services;
 use App\Models\Plan;
 use App\Models\Subscription;
 use App\Models\User;
-use Srmklive\PayPal\Services\PayPal as PayPalClient;
+use Illuminate\Support\Facades\Log;
+use Exception;
 
 class PayPalSubscriptionService
 {
+    protected PayPalAPIService $paypalApi;
+    protected SubscriptionService $subscriptionService;
+    
+    public function __construct(
+        PayPalAPIService $paypalApi,
+        SubscriptionService $subscriptionService
+    ) {
+        $this->paypalApi = $paypalApi;
+        $this->subscriptionService = $subscriptionService;
+    }
     protected PayPalClient $paypal;
 
     public function __construct()
