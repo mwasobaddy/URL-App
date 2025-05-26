@@ -2,10 +2,8 @@
 
 use Livewire\Volt\Component;
 use Illuminate\Support\Str;
-use WireUi\Traits\WireUiActions;
 
 new class extends Component {
-    use WireUiActions;
 
     public string $name = '';
     public string $description = ''; // Added description property
@@ -54,15 +52,20 @@ new class extends Component {
             $this->reset(['name', 'description', 'custom_url']); // Added description to reset()
             $this->placeholderUrl = $this->generateUniqueUrl();
             
-            $this->notification()->success(
-                title: 'List Created',
-                description: 'Your new URL list was created successfully!'
-            );
+            // Replace session flash with SweetAlert2 toast
+            $this->dispatch('swal:toast', [
+                'type' => 'success',
+                'title' => 'List created successfully!'
+            ]);
+            
+            $this->dispatch('listCreated', url: url('/lists/' . $this->generatedUrl . '/manage'));
+            
         } catch (\Exception $e) {
-            $this->notification()->error(
-                title: 'Error',
-                description: 'There was a problem creating your list. Please try again.'
-            );
+            // Replace session flash with SweetAlert2 toast for error
+            $this->dispatch('swal:toast', [
+                'type' => 'error',
+                'title' => 'There was a problem creating the list. Please try again.'
+            ]);
         }
     }
 
@@ -76,7 +79,10 @@ new class extends Component {
 }; ?>
 
 <!-- Main container with glass morphism effect -->
-<div class="max-w-2xl mx-auto backdrop-blur-sm bg-white/90 dark:bg-neutral-800/90 shadow-xl rounded-3xl p-8 mt-8 border border-gray-100/40 dark:border-neutral-700/50">
+<div class="max-w-2xl mx-auto my-8 backdrop-blur-sm bg-white/80 dark:bg-neutral-800/80 shadow-xl rounded-3xl p-8 border border-gray-100/40 dark:border-neutral-700/50 transition-all duration-300 relative overflow-hidden">
+    <!-- Decorative elements - subtle background patterns -->
+    <div class="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-emerald-400/10 to-transparent rounded-full blur-3xl -z-10"></div>
+    <div class="absolute bottom-0 left-0 w-80 h-80 bg-gradient-to-tr from-teal-400/10 to-transparent rounded-full blur-3xl -z-10"></div>
     <!-- Header with modern typography and micro-interaction -->
     <div class="relative mb-8">
         <h2 class="text-3xl md:text-4xl font-extrabold tracking-tight">

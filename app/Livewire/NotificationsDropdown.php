@@ -32,16 +32,41 @@ class NotificationsDropdown extends Component
 
     public function markAsRead($notificationId)
     {
-        $notification = Auth::user()->notifications()->findOrFail($notificationId);
-        $notification->markAsRead();
+        try {
+            $notification = Auth::user()->notifications()->findOrFail($notificationId);
+            $notification->markAsRead();
+            
+            $this->dispatch('swal:toast', [
+                'type' => 'success',
+                'title' => 'Notification marked as read'
+            ]);
+        } catch (\Exception $e) {
+            $this->dispatch('swal:toast', [
+                'type' => 'error',
+                'title' => 'Could not mark notification as read'
+            ]);
+        }
+
         $this->loadNotifications();
     }
 
     public function markAllAsRead()
     {
-        Auth::user()->unreadNotifications->markAsRead();
+        try {
+            Auth::user()->unreadNotifications->markAsRead();
+            
+            $this->dispatch('swal:toast', [
+                'type' => 'success',
+                'title' => 'All notifications marked as read'
+            ]);
+        } catch (\Exception $e) {
+            $this->dispatch('swal:toast', [
+                'type' => 'error',
+                'title' => 'Could not mark notifications as read'
+            ]);
+        }
+
         $this->loadNotifications();
-        $this->dispatch('notifications-cleared');
     }
 
     public function render()

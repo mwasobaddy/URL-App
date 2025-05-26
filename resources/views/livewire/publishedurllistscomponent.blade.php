@@ -1,12 +1,11 @@
 <?php
 
 use Livewire\Volt\Component;
-use WireUi\Traits\WireUiActions;
 use Livewire\WithPagination;
 use App\Models\UrlList;
 
 new class extends Component {
-    use WireUiActions, WithPagination;
+    use WithPagination;
 
     public $search = '';
     public $sortBy = 'created_at';
@@ -128,7 +127,7 @@ new class extends Component {
     </div>
 
     <!-- Lists container with enhanced styling -->
-    <div class="bg-white/60 dark:bg-neutral-800/60 rounded-2xl overflow-hidden shadow border border-gray-100/60 dark:border-neutral-700/40 backdrop-blur-sm transition-all duration-300">
+    <div class="bg-white/60 dark:bg-neutral-800/60 rounded-2xl overflow-hidden shadow border border-gray-300/60 dark:border-neutral-700/40 backdrop-blur-sm transition-all duration-300">
         <!-- Table headers with improved interaction -->
         <div class="hidden md:grid grid-cols-12 gap-4 py-4 px-6 bg-gray-50/90 dark:bg-neutral-700/20 border-b border-gray-100 dark:border-neutral-700/50">
             <div wire:click="sort('name')" class="col-span-3 flex items-center text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider cursor-pointer select-none group">

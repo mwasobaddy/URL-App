@@ -1,14 +1,13 @@
 <?php
 
 use Livewire\Volt\Component;
-use WireUi\Traits\WireUiActions;
 use Livewire\WithPagination;
 use Illuminate\Support\Facades\Http;
 use function Livewire\Volt\state;
 use function Livewire\Volt\computed;
 
 new class extends Component {
-    use WireUiActions, WithPagination;
+    use WithPagination;
 
     public $list;
     public $search = '';
@@ -259,17 +258,9 @@ new class extends Component {
             $url = $this->list->urls()->findOrFail($id);
             $url->delete();
             
-            $this->notification()->success(
-                'URL Deleted',
-                'The URL was deleted successfully.'
-            );
-
             $this->resetPage();
         } catch (\Exception $e) {
-            $this->notification()->error(
-                'Error',
-                'There was a problem deleting the URL. Please try again.'
-            );
+            // Handle error
         }
     }
 
@@ -307,11 +298,17 @@ new class extends Component {
             $url = $this->list->urls()->find($this->editingUrlId);
             if ($url) {
                 $url->update($this->urlData);
-                $this->notification()->success('URL Updated', 'The URL was updated successfully.');
+                $this->dispatch('swal:toast', [
+                    'type' => 'success',
+                    'title' => 'URL updated successfully.'
+                ]);
             }
         } else {
             $this->list->urls()->create($this->urlData);
-            $this->notification()->success('URL Added', 'The URL was added successfully.');
+            $this->dispatch('swal:toast', [
+                'type' => 'success',
+                'title' => 'URL added successfully.'
+            ]);
         }
 
         $this->showUrlModal = false; // Close modal
@@ -358,18 +355,22 @@ new class extends Component {
                 'published' => $this->editListPublished,
             ]);
 
-            $this->notification()->success(
-                'List Updated',
-                'Your list was updated successfully.'
-            );
+            $this->dispatch('swal:toast', [
+                'type' => 'success',
+                'title' => 'List settings updated successfully.'
+            ]);
 
             $this->showEditListModal = false;
             $this->dispatch('listUpdated');
         } catch (\Exception $e) {
-            $this->notification()->error(
-                'Error',
-                'There was a problem updating the list. Please try again.'
-            );
+            // Handle error
+            // Optionally, you could dispatch an error toast here as well:
+            $this->dispatch('swal:toast', [
+                'type' => 'error',
+                'title' => 'Failed to update list settings.'
+            ]);
+            // Optionally, log the error for debugging
+            \Log::error('List update failed: ' . $e->getMessage());
         }
     }
 
@@ -386,7 +387,6 @@ new class extends Component {
     public function deleteList()
     {
         if (auth()->id() !== $this->list->user_id) {
-            $this->notification()->error('Unauthorized', 'You are not authorized to delete this list.');
             $this->showDeleteListModal = false;
             return;
         }
@@ -395,26 +395,21 @@ new class extends Component {
             $listName = $this->list->name;
             $this->list->delete(); // Eloquent model delete
 
-            $this->notification()->success(
-                'List Deleted',
-                "The list '{$listName}' was deleted successfully."
-            );
-
             $this->showDeleteListModal = false;
             // Redirect to a relevant page, e.g., dashboard
             return redirect()->route('lists.dashboard'); 
         } catch (\Exception $e) {
-            // Log::error('Error deleting list: ' . $e->getMessage()); // Consider logging the error
-            $this->notification()->error(
-                'Error',
-                'There was a problem deleting the list. Please try again.'
-            );
+            // Handle error
             $this->showDeleteListModal = false;
         }
     }
 }; ?>
 
-<div class="max-w-6xl mx-auto backdrop-blur-sm bg-white/90 dark:bg-neutral-800/90 shadow-xl rounded-3xl p-6 lg:p-8 mt-8 border border-gray-100/40 dark:border-neutral-700/50">
+<div class="max-w-6xl mx-auto my-8 backdrop-blur-sm bg-white/90 dark:bg-neutral-800/90 shadow-xl rounded-3xl p-6 border border-gray-100/40 dark:border-neutral-700/50 transition-all duration-300 relative overflow-hidden">
+    <!-- Decorative elements - subtle background patterns -->
+    <div class="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-emerald-400/10 to-transparent rounded-full blur-3xl -z-10"></div>
+    <div class="absolute bottom-0 left-0 w-80 h-80 bg-gradient-to-tr from-teal-400/10 to-transparent rounded-full blur-3xl -z-10"></div>
+        
     <!-- Header with modern typography -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-10">
         <div class="relative">
@@ -741,6 +736,10 @@ new class extends Component {
 
     <!-- Unified Add/Edit URL Modal -->
     <flux:modal wire:model.live="showUrlModal" name="url-modal" variant="default" title="{{ $isEditing ? 'Edit URL' : 'Add New URL' }}" class="w-auto">
+        <!-- Decorative elements - subtle background patterns -->
+        <div class="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-emerald-400/10 to-transparent rounded-full blur-3xl -z-10"></div>
+        <div class="absolute bottom-0 left-0 w-80 h-80 bg-gradient-to-tr from-teal-400/10 to-transparent rounded-full blur-3xl -z-10"></div>
+            
         <form wire:submit.prevent="saveUrl">
             <div class="space-y-4">
                 <div class="relative mb-8">
@@ -877,11 +876,12 @@ new class extends Component {
                 <flux:button flat type="button" wire:click="closeDeleteListModal">
                     {{ __('Cancel') }}
                 </flux:button>
-                <flux:button type="button" wire:click="deleteList" class="bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg text-sm px-4 py-2 text-center items-center transition-all duration-200 shadow-sm hover:shadow-md" wire:loading.attr="disabled" wire:target="deleteList">
+                <flux:button type="button" wire:click="deleteList" class="relative overflow-hidden inline-flex items-center px-4 py-2 bg-gradient-to-r from-red-500 to-rose-500 hover:from-red-600 hover:to-rose-600 text-white rounded-lg text-sm font-medium transition-all duration-200 shadow-sm hover:shadow" wire:loading.attr="disabled" wire:target="deleteList">
                     <span wire:loading.remove wire:target="deleteList">{{ __('Delete List') }}</span>
-                    <span class="hidden" wire:loading.class.remove="hidden" wire:target="deleteList" >{{ __('Deleting...') }}</span>
+                    <span class="hidden" wire:loading.class.remove="hidden" wire:target="deleteList">{{ __('Deleting...') }}</span>
                 </flux:button>
             </div>
         </flux:modal>
     @endif
 </div>
+

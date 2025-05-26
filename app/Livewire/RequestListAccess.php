@@ -32,13 +32,19 @@ class RequestListAccess extends Component
         
         // Check if user already has a pending request
         if ($this->urlList->hasPendingAccessRequest(Auth::id())) {
-            session()->flash('error', 'You already have a pending request for this list.');
+            $this->dispatch('swal:toast', [
+                'type' => 'error',
+                'title' => 'You already have a pending request for this list.'
+            ]);
             return;
         }
         
         // Check if user is already a collaborator
         if ($this->urlList->isCollaborator(Auth::id())) {
-            session()->flash('error', 'You are already a collaborator on this list.');
+            $this->dispatch('swal:toast', [
+                'type' => 'error',
+                'title' => 'You are already a collaborator on this list.'
+            ]);
             return;
         }
         
@@ -58,7 +64,10 @@ class RequestListAccess extends Component
         $this->showRequestForm = false;
         
         $this->dispatch('access-requested');
-        session()->flash('success', 'Access request submitted successfully.');
+        $this->dispatch('swal:toast', [
+            'type' => 'success',
+            'title' => 'Access request submitted successfully.'
+        ]);
     }
     
     public function render()

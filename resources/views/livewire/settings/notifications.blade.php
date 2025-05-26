@@ -1,7 +1,6 @@
 <?php
 
 use Livewire\Volt\Component;
-use WireUi\Traits\WireUiActions;
 
 new class extends Component {
     use WireUiActions;
@@ -22,11 +21,12 @@ new class extends Component {
         $user = auth()->user();
         $user->notification_preferences = $this->notificationPreferences;
         $user->save();
-
-        $this->notification()->success(
-            title: 'Preferences Updated',
-            description: 'Your notification preferences have been saved.'
-        );
+        $this->notificationPreferences = $user->notification_preferences;
+        
+        $this->dispatch('swal:toast', [
+            'type' => 'success',
+            'title' => 'Notification preferences updated successfully.'
+        ]);
     }
 }; ?>
 

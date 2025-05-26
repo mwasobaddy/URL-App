@@ -1,4 +1,8 @@
-<div class="max-w-4xl mx-auto backdrop-blur-sm bg-white/90 dark:bg-zinc-800/90 shadow-xl rounded-3xl p-6 lg:p-8 mt-8 border border-gray-100/40 dark:border-neutral-700/50">
+<div class="max-w-4xl mx-auto my-8 backdrop-blur-sm bg-white/90 dark:bg-neutral-800/90 shadow-xl rounded-3xl p-6 border border-gray-100/40 dark:border-neutral-700/50 transition-all duration-300 relative overflow-hidden">
+    <!-- Decorative elements - subtle background patterns -->
+    <div class="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-emerald-400/10 to-transparent rounded-full blur-3xl -z-10"></div>
+    <div class="absolute bottom-0 left-0 w-80 h-80 bg-gradient-to-tr from-teal-400/10 to-transparent rounded-full blur-3xl -z-10"></div>
+    
     <!-- Header Section -->
     <div class="relative mb-8">
         <h2 class="text-3xl md:text-4xl font-extrabold tracking-tight">

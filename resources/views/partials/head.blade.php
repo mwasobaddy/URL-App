@@ -10,9 +10,8 @@
 <link rel="preconnect" href="https://fonts.bunny.net">
 <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600" rel="stylesheet" />
 
-<!-- WireUI -->
-<wireui:scripts />
-<script src="//unpkg.com/@wireui/wireui@^2.0/dist/wireui.js" defer></script>
+<!-- SweetAlert2 CSS -->
+<link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
 
 @vite(['resources/css/app.css', 'resources/js/app.js'])
 @fluxAppearance

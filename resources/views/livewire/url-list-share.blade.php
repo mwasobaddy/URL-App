@@ -1,13 +1,12 @@
 <?php
 
 use Livewire\Volt\Component;
-use WireUi\Traits\WireUiActions;
 
-new class extends Component {
-    use WireUiActions;
-
-    public $list;
-    public $shareUrl;
+class UrlListShare extends \Livewire\Component
+{
+    public UrlList $urlList;
+    public $link;
+    public $copied = false;
 
     public function mount($custom_url)
     {
@@ -23,28 +22,14 @@ new class extends Component {
             $this->list->published = !$this->list->published;
             $this->list->save();
             $this->list = $this->list->fresh();
-            
-            $this->notification()->success(
-                title: $this->list->published ? 'List Published' : 'List Unpublished',
-                description: $this->list->published 
-                    ? 'Your list is now publicly accessible.'
-                    : 'Your list is now private.'
-            );
         } catch (\Exception $e) {
-            $this->notification()->error(
-                title: 'Error',
-                description: 'There was a problem updating the list.'
-            );
+            session()->flash('error', 'There was a problem updating the list.');
         }
     }
 
     public function copyUrl()
     {
-        $this->notification()->success(
-            
-            title: 'URL Copied',
-            description: 'The shareable URL has been copied to your clipboard.'
-        );
+        $this->copied = true;
     }
 }; ?>
 

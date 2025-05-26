@@ -164,8 +164,6 @@ return [
         /*
          * Package Service Providers...
          */
-        WireUi\ServiceProvider::class,
-        WireUi\Heroicons\HeroiconsServiceProvider::class,
 
         /*
          * Application Service Providers...

@@ -3,7 +3,28 @@
 use Livewire\Volt\Component;
 
 new class extends Component {
-    //
+    public string $theme = '';
+
+    public function mount(): void
+    {
+        $this->theme = auth()->user()->theme ?? 'system';
+    }
+
+    public function updateAppearance(): void
+    {
+        $validated = $this->validate([
+            'theme' => ['required', 'string', 'in:light,dark,system'],
+        ]);
+
+        auth()->user()->update($validated);
+
+        $this->dispatch('theme-updated', theme: $validated['theme']);
+        
+        $this->dispatch('swal:toast', [
+            'type' => 'success',
+            'title' => 'Appearance settings updated successfully!'
+        ]);
+    }
 }; ?>
 
 <section class="w-full">

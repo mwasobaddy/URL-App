@@ -42,9 +42,12 @@ class ManageListAccess extends Component
     {
         $this->urlList->allow_access_requests = !$this->urlList->allow_access_requests;
         $this->urlList->save();
-        $this->allowAccessRequests = $this->urlList->allow_access_requests; // update property
+        $this->allowAccessRequests = $this->urlList->allow_access_requests;
 
-        session()->flash('success', 'Sharing settings updated.');
+        $this->dispatch('swal:toast', [
+            'type' => 'success',
+            'title' => 'Sharing settings updated successfully.'
+        ]);
         $this->dispatch('refreshComponent');
     }
     
@@ -69,7 +72,10 @@ class ManageListAccess extends Component
         // Notify the requester
         $request->requester->notify(new AccessResponseNotification($request, true));
         
-        session()->flash('success', 'Access request approved.');
+        $this->dispatch('swal:toast', [
+            'type' => 'success',
+            'title' => 'Access request approved successfully.'
+        ]);
     }
     
     public function denyRequest($requestId)
@@ -87,7 +93,10 @@ class ManageListAccess extends Component
         // Notify the requester about rejection
         $request->requester->notify(new AccessResponseNotification($request, false));
         
-        session()->flash('success', 'Access request denied.');
+        $this->dispatch('swal:toast', [
+            'type' => 'success',
+            'title' => 'Access request denied.'
+        ]);
     }
     
     public function removeCollaborator($collaboratorId)
@@ -102,7 +111,10 @@ class ManageListAccess extends Component
         // Remove the collaborator
         $collaborator->delete();
         
-        session()->flash('success', 'Collaborator removed successfully.');
+        $this->dispatch('swal:toast', [
+            'type' => 'success',
+            'title' => 'Collaborator removed successfully.'
+        ]);
     }
     
     public function inviteUser()
@@ -114,19 +126,28 @@ class ManageListAccess extends Component
         $user = User::where('email', $this->emailSearch)->first();
         
         if (!$user) {
-            session()->flash('error', 'No user found with this email address.');
+            $this->dispatch('swal:toast', [
+                'type' => 'error',
+                'title' => 'No user found with this email address.'
+            ]);
             return;
         }
         
         // Make sure this isn't the list owner
         if ($user->id === $this->urlList->user_id) {
-            session()->flash('error', 'You are already the owner of this list.');
+            $this->dispatch('swal:toast', [
+                'type' => 'error',
+                'title' => 'You are already the owner of this list.'
+            ]);
             return;
         }
         
         // Check if user is already a collaborator
         if ($this->urlList->isCollaborator($user->id)) {
-            session()->flash('error', 'This user is already a collaborator.');
+            $this->dispatch('swal:toast', [
+                'type' => 'error',
+                'title' => 'This user is already a collaborator.'
+            ]);
             return;
         }
         
@@ -139,7 +160,10 @@ class ManageListAccess extends Component
         $this->reset('emailSearch');
         $this->showInviteForm = false;
         
-        session()->flash('success', 'User added as collaborator successfully.');
+        $this->dispatch('swal:toast', [
+            'type' => 'success',
+            'title' => 'User added as collaborator successfully.'
+        ]);
     }
     
     public function render()

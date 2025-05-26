@@ -1,12 +1,10 @@
 <?php
 
 use Livewire\Volt\Component;
-use WireUi\Traits\WireUiActions;
+use Livewire\WithPagination;
 use Illuminate\Support\Facades\Http;
 
 new class extends Component {
-    use WireUiActions;
-
     public $listId;
     public $url = '';
     public $title = '';
@@ -63,15 +61,9 @@ new class extends Component {
             $this->reset(['url', 'title', 'description']);
             $this->dispatch('urlAdded', url: $url->toArray());
 
-            $this->notification()->success(
-                title: 'URL Added',
-                description: 'The URL was added to your list successfully.'
-            );
+            session()->flash('success', 'The URL was added to your list successfully.');
         } catch (\Exception $e) {
-            $this->notification()->error(
-                title: 'Error',
-                description: 'There was a problem adding the URL. Please try again.'
-            );
+            session()->flash('error', 'There was a problem adding the URL. Please try again.');
         }
     }
 
@@ -103,25 +95,16 @@ new class extends Component {
             $this->reset(['url', 'title', 'description', 'editingId']);
             $this->dispatch('urlUpdated', url: $url->fresh()->toArray());
 
-            $this->notification()->success(
-                title: 'URL Updated',
-                description: 'The URL was updated successfully.'
-            );
+            session()->flash('success', 'The URL was updated successfully.');
         } catch (\Exception $e) {
-            $this->notification()->error(
-                title: 'Error',
-                description: 'There was a problem updating the URL. Please try again.'
-            );
+            session()->flash('error', 'There was a problem updating the URL. Please try again.');
         }
     }
 
     public function cancelEdit()
     {
         $this->reset(['url', 'title', 'description', 'editingId']);
-        $this->notification()->info(
-                title: 'Edit Cancelled',
-            description: 'URL editing was cancelled.'
-        );
+        session()->flash('info', 'URL editing was cancelled.');
     }
 }; ?>
 
