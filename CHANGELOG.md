@@ -19,6 +19,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.2.8] - 2025-05-27
 
+### Fixed
+- Fixed error "Call to undefined method Livewire\Volt\VoltManager::provide()" in SubscriptionServiceProvider.php
+- Removed invalid method calls that don't exist in Livewire Volt 1.7.1
+- Updated service provider to work correctly with the current Volt API
+- Fixed route registration error with the ManageListAccess Livewire component
+- Added documentation explaining the proper way to use services in Volt components
+- Temporarily modified `/lists/{urlList}/access` route to use a closure function
+
 ### Added
 - Revenue reports export system
   - Custom date range selection

@@ -31,9 +31,8 @@ class SubscriptionServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        // Make services available in Volt components
-        \Livewire\Volt\Volt::provide('subscriptionService', fn() => app(SubscriptionService::class));
-        \Livewire\Volt\Volt::provide('usageTrackingService', fn() => app(UsageTrackingService::class));
-        \Livewire\Volt\Volt::provide('roleCheckService', fn() => app(RoleCheckService::class));
+        // We don't need to explicitly make these services available to Volt components
+        // as they can be injected directly into the component mount() method
+        // or accessed using app() helper function in Volt components
     }
 }
