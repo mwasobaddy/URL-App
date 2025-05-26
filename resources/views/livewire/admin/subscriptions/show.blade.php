@@ -1,84 +1,84 @@
 <?php
 
-use function Livewire\Volt\{state, computed, mount};
+use Livewire\Volt\Component;
 use App\Models\Subscription;
 use App\Services\SubscriptionService;
 use App\Services\PayPalSubscriptionService;
 
-state([
-    'subscription' => null,
-    'paypalDetails' => null,
-    'loading' => false,
-    'error' => null
-]);
-
-mount(function (Subscription $subscription, SubscriptionService $subscriptionService) {
-    $this->subscription = $subscription->load(['user', 'plan', 'planVersion']);
-    $this->refreshPayPalDetails();
-});
-
-$metrics = computed(function () {
-    $user = $this->subscription->user;
-    $service = app(SubscriptionService::class);
+new class extends Component {
+    public $subscription = null;
+    public $paypalDetails = null;
+    public $loading = false;
+    public $error = null;
     
-    return [
-        'lists_count' => $user->urlLists()->count(),
-        'lists_limit' => $service->getFeatureLimits($user)['lists'] ?? 0,
-        'urls_count' => $user->urlLists()->withCount('urls')->get()->sum('urls_count'),
-        'urls_per_list' => $service->getFeatureLimits($user)['urls_per_list'] ?? 0,
-        'collaborators_count' => $user->urlLists()->withCount('collaborators')->get()->sum('collaborators_count'),
-        'collaborators_limit' => $service->getFeatureLimits($user)['collaborators'] ?? 0,
-    ];
-});
-
-$refreshPayPalDetails = function () {
-    $this->loading = true;
-    $this->error = null;
-    
-    try {
-        $paypalService = app(PayPalSubscriptionService::class);
-        $this->paypalDetails = $paypalService->getSubscription($this->subscription->paypal_subscription_id);
-    } catch (\Exception $e) {
-        $this->error = 'Failed to fetch PayPal subscription details.';
+    public function mount(Subscription $subscription, SubscriptionService $subscriptionService) {
+        $this->subscription = $subscription->load(['user', 'plan', 'planVersion']);
+        $this->refreshPayPalDetails();
     }
     
-    $this->loading = false;
-};
-
-$cancelSubscription = function () {
-    $this->loading = true;
-    $this->error = null;
+    public function metrics() {
+        $user = $this->subscription->user;
+        $service = app(SubscriptionService::class);
+        
+        return [
+            'lists_count' => $user->urlLists()->count(),
+            'lists_limit' => $service->getFeatureLimits($user)['lists'] ?? 0,
+            'urls_count' => $user->urlLists()->withCount('urls')->get()->sum('urls_count'),
+            'urls_per_list' => $service->getFeatureLimits($user)['urls_per_list'] ?? 0,
+            'collaborators_count' => $user->urlLists()->withCount('collaborators')->get()->sum('collaborators_count'),
+            'collaborators_limit' => $service->getFeatureLimits($user)['collaborators'] ?? 0,
+        ];
+    }
     
-    try {
-        $paypalService = app(PayPalSubscriptionService::class);
-        if ($paypalService->cancelSubscription($this->subscription)) {
-            $this->subscription->cancel();
-            $this->refreshPayPalDetails();
-            $this->dispatch('subscription-updated');
-        } else {
+    public function refreshPayPalDetails() {
+        $this->loading = true;
+        $this->error = null;
+        
+        try {
+            $paypalService = app(PayPalSubscriptionService::class);
+            $this->paypalDetails = $paypalService->getSubscription($this->subscription->paypal_subscription_id);
+        } catch (\Exception $e) {
+            $this->error = 'Failed to fetch PayPal subscription details.';
+        }
+        
+        $this->loading = false;
+    }
+    
+    public function cancelSubscription() {
+        $this->loading = true;
+        $this->error = null;
+        
+        try {
+            $paypalService = app(PayPalSubscriptionService::class);
+            if ($paypalService->cancelSubscription($this->subscription)) {
+                $this->subscription->cancel();
+                $this->refreshPayPalDetails();
+                $this->dispatch('subscription-updated');
+            } else {
+                $this->error = 'Failed to cancel subscription.';
+            }
+        } catch (\Exception $e) {
             $this->error = 'Failed to cancel subscription.';
         }
-    } catch (\Exception $e) {
-        $this->error = 'Failed to cancel subscription.';
+        
+        $this->loading = false;
     }
     
-    $this->loading = false;
-};
-
-$resumeSubscription = function () {
-    $this->loading = true;
-    $this->error = null;
-    
-    try {
-        $this->subscription->resume();
-        $this->refreshPayPalDetails();
-        $this->dispatch('subscription-updated');
-    } catch (\Exception $e) {
-        $this->error = 'Failed to resume subscription.';
+    public function resumeSubscription() {
+        $this->loading = true;
+        $this->error = null;
+        
+        try {
+            $this->subscription->resume();
+            $this->refreshPayPalDetails();
+            $this->dispatch('subscription-updated');
+        } catch (\Exception $e) {
+            $this->error = 'Failed to resume subscription.';
+        }
+        
+        $this->loading = false;
     }
-    
-    $this->loading = false;
-};
+}
 
 ?>
 
@@ -238,20 +238,20 @@ $resumeSubscription = function () {
                         <div class="mt-2">
                             <div class="flex items-center justify-between">
                                 <p class="text-sm text-gray-900 dark:text-white">
-                                    {{ $this->metrics['lists_count'] }} / 
-                                    {{ $this->metrics['lists_limit'] === -1 ? '∞' : $this->metrics['lists_limit'] }}
+                                    {{ $this->metrics()['lists_count'] }} / 
+                                    {{ $this->metrics()['lists_limit'] === -1 ? '∞' : $this->metrics()['lists_limit'] }}
                                 </p>
-                                @if($this->metrics['lists_limit'] !== -1)
+                                @if($this->metrics()['lists_limit'] !== -1)
                                     <p class="text-sm text-gray-500 dark:text-gray-400">
-                                        {{ number_format(($this->metrics['lists_count'] / $this->metrics['lists_limit']) * 100, 0) }}%
+                                        {{ number_format(($this->metrics()['lists_count'] / $this->metrics()['lists_limit']) * 100, 0) }}%
                                     </p>
                                 @endif
                             </div>
-                            @if($this->metrics['lists_limit'] !== -1)
+                            @if($this->metrics()['lists_limit'] !== -1)
                                 <div class="mt-1 w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                                     <div 
                                         class="bg-emerald-600 h-2 rounded-full" 
-                                        style="width: {{ min(($this->metrics['lists_count'] / $this->metrics['lists_limit']) * 100, 100) }}%"
+                                        style="width: {{ min(($this->metrics()['lists_count'] / $this->metrics()['lists_limit']) * 100, 100) }}%"
                                     ></div>
                                 </div>
                             @endif
@@ -262,10 +262,10 @@ $resumeSubscription = function () {
                         <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400">URLs per List</h4>
                         <div class="mt-2">
                             <p class="text-sm text-gray-900 dark:text-white">
-                                Max {{ $this->metrics['urls_per_list'] === -1 ? '∞' : $this->metrics['urls_per_list'] }} URLs per list
+                                Max {{ $this->metrics()['urls_per_list'] === -1 ? '∞' : $this->metrics()['urls_per_list'] }} URLs per list
                             </p>
                             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                                Total URLs: {{ $this->metrics['urls_count'] }}
+                                Total URLs: {{ $this->metrics()['urls_count'] }}
                             </p>
                         </div>
                     </div>
@@ -275,20 +275,20 @@ $resumeSubscription = function () {
                         <div class="mt-2">
                             <div class="flex items-center justify-between">
                                 <p class="text-sm text-gray-900 dark:text-white">
-                                    {{ $this->metrics['collaborators_count'] }} / 
-                                    {{ $this->metrics['collaborators_limit'] === -1 ? '∞' : $this->metrics['collaborators_limit'] }}
+                                    {{ $this->metrics()['collaborators_count'] }} / 
+                                    {{ $this->metrics()['collaborators_limit'] === -1 ? '∞' : $this->metrics()['collaborators_limit'] }}
                                 </p>
-                                @if($this->metrics['collaborators_limit'] !== -1)
+                                @if($this->metrics()['collaborators_limit'] !== -1)
                                     <p class="text-sm text-gray-500 dark:text-gray-400">
-                                        {{ number_format(($this->metrics['collaborators_count'] / $this->metrics['collaborators_limit']) * 100, 0) }}%
+                                        {{ number_format(($this->metrics()['collaborators_count'] / $this->metrics()['collaborators_limit']) * 100, 0) }}%
                                     </p>
                                 @endif
                             </div>
-                            @if($this->metrics['collaborators_limit'] !== -1)
+                            @if($this->metrics()['collaborators_limit'] !== -1)
                                 <div class="mt-1 w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                                     <div 
                                         class="bg-emerald-600 h-2 rounded-full" 
-                                        style="width: {{ min(($this->metrics['collaborators_count'] / $this->metrics['collaborators_limit']) * 100, 100) }}%"
+                                        style="width: {{ min(($this->metrics()['collaborators_count'] / $this->metrics()['collaborators_limit']) * 100, 100) }}%"
                                     ></div>
                                 </div>
                             @endif

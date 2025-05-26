@@ -1,94 +1,105 @@
 <?php
 
-use function Livewire\Volt\{state, computed, mount};
 use App\Models\User;
 use App\Services\SubscriptionService;
 use App\Services\UsageTrackingService;
+use Livewire\Attributes\Computed;
+use Livewire\WithPagination;
+use Livewire\Volt\Component;
 
-state([
-    'search' => '',
-    'filter' => '',
-    'perPage' => 10,
-    'sortField' => 'created_at',
-    'sortDirection' => 'desc'
-]);
-
-$customers = computed(function () {
-    return User::query()
-        ->with(['subscription.plan', 'subscription.planVersion'])
-        ->when($this->search, function ($query) {
-            $query->where(function ($q) {
-                $q->where('name', 'like', "%{$this->search}%")
-                  ->orWhere('email', 'like', "%{$this->search}%");
-            });
-        })
-        ->when($this->filter, function ($query) {
-            if ($this->filter === 'subscribed') {
-                $query->whereHas('subscription', function($q) {
-                    $q->where('status', 'active');
+new class extends Component {
+    use WithPagination;
+    
+    public $search = '';
+    public $filter = '';
+    public $perPage = 10;
+    public $sortField = 'created_at';
+    public $sortDirection = 'desc';
+    
+    #[Computed]
+    public function customers()
+    {
+        return User::query()
+            ->with(['subscription.plan', 'subscription.planVersion'])
+            ->when($this->search, function ($query) {
+                $query->where(function ($q) {
+                    $q->where('name', 'like', "%{$this->search}%")
+                      ->orWhere('email', 'like', "%{$this->search}%");
                 });
-            } elseif ($this->filter === 'trial') {
-                $query->whereHas('subscription', function($q) {
-                    $q->whereNotNull('trial_ends_at')
-                      ->where('trial_ends_at', '>', now());
-                });
-            } elseif ($this->filter === 'cancelled') {
-                $query->whereHas('subscription', function($q) {
-                    $q->whereNotNull('cancelled_at');
-                });
-            } elseif ($this->filter === 'expired') {
-                $query->whereHas('subscription', function($q) {
-                    $q->where('status', 'expired');
-                });
-            } elseif ($this->filter === 'no_subscription') {
-                $query->doesntHave('subscription');
-            }
-        })
-        ->orderBy($this->sortField, $this->sortDirection)
-        ->paginate($this->perPage);
-});
-
-$stats = computed(function () {
-    return [
-        'total' => User::count(),
-        'subscribed' => User::whereHas('subscription', function($q) {
-            $q->where('status', 'active');
-        })->count(),
-        'trial' => User::whereHas('subscription', function($q) {
-            $q->whereNotNull('trial_ends_at')
-              ->where('trial_ends_at', '>', now());
-        })->count(),
-        'cancelled' => User::whereHas('subscription', function($q) {
-            $q->whereNotNull('cancelled_at');
-        })->count(),
-    ];
-});
-
-$sort = function (string $field) {
-    if ($this->sortField === $field) {
-        $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
-    } else {
-        $this->sortField = $field;
-        $this->sortDirection = 'asc';
+            })
+            ->when($this->filter, function ($query) {
+                if ($this->filter === 'subscribed') {
+                    $query->whereHas('subscription', function($q) {
+                        $q->where('status', 'active');
+                    });
+                } elseif ($this->filter === 'trial') {
+                    $query->whereHas('subscription', function($q) {
+                        $q->whereNotNull('trial_ends_at')
+                          ->where('trial_ends_at', '>', now());
+                    });
+                } elseif ($this->filter === 'cancelled') {
+                    $query->whereHas('subscription', function($q) {
+                        $q->whereNotNull('cancelled_at');
+                    });
+                } elseif ($this->filter === 'expired') {
+                    $query->whereHas('subscription', function($q) {
+                        $q->where('status', 'expired');
+                    });
+                } elseif ($this->filter === 'no_subscription') {
+                    $query->doesntHave('subscription');
+                }
+            })
+            ->orderBy($this->sortField, $this->sortDirection)
+            ->paginate($this->perPage);
+    }
+    
+    #[Computed]
+    public function stats()
+    {
+        return [
+            'total' => User::count(),
+            'subscribed' => User::whereHas('subscription', function($q) {
+                $q->where('status', 'active');
+            })->count(),
+            'trial' => User::whereHas('subscription', function($q) {
+                $q->whereNotNull('trial_ends_at')
+                  ->where('trial_ends_at', '>', now());
+            })->count(),
+            'cancelled' => User::whereHas('subscription', function($q) {
+                $q->whereNotNull('cancelled_at');
+            })->count(),
+        ];
+    }
+    
+    public function sort(string $field)
+    {
+        if ($this->sortField === $field) {
+            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            $this->sortField = $field;
+            $this->sortDirection = 'asc';
+        }
+    }
+    
+    public function getUsageStats(User $user)
+    {
+        $service = app(UsageTrackingService::class);
+        return $service->getTotalUsage($user);
+    }
+    
+    public function getFeatureLimits(User $user)
+    {
+        $service = app(SubscriptionService::class);
+        return $service->getFeatureLimits($user);
+    }
+    
+    public function getUsagePercentage($used, $limit)
+    {
+        if ($limit === -1) return 0; // Unlimited
+        if ($limit === 0) return 100; // No limit set
+        return min(100, ($used / $limit) * 100);
     }
 };
-
-$getUsageStats = function (User $user) {
-    $service = app(UsageTrackingService::class);
-    return $service->getTotalUsage($user);
-};
-
-$getFeatureLimits = function (User $user) {
-    $service = app(SubscriptionService::class);
-    return $service->getFeatureLimits($user);
-};
-
-$getUsagePercentage = function ($used, $limit) {
-    if ($limit === -1) return 0; // Unlimited
-    if ($limit === 0) return 100; // No limit set
-    return min(100, ($used / $limit) * 100);
-};
-
 ?>
 
 <div>
@@ -197,8 +208,8 @@ $getUsagePercentage = function ($used, $limit) {
                 <tbody class="bg-white dark:bg-zinc-800 divide-y divide-gray-200 dark:divide-zinc-700">
                     @foreach($this->customers as $customer)
                         @php
-                            $usage = $getUsageStats($customer);
-                            $limits = $getFeatureLimits($customer);
+                            $usage = $this->getUsageStats($customer);
+                            $limits = $this->getFeatureLimits($customer);
                         @endphp
                         <tr>
                             <td class="px-6 py-4 whitespace-nowrap">
@@ -252,7 +263,7 @@ $getUsagePercentage = function ($used, $limit) {
                                         <div class="w-32 h-1 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                                             <div 
                                                 class="h-full bg-emerald-500 rounded-full" 
-                                                style="width: {{ $getUsagePercentage($usage['lists'] ?? 0, $limits['lists']) }}%"
+                                                style="width: {{ $this->getUsagePercentage($usage['lists'] ?? 0, $limits['lists']) }}%"
                                             ></div>
                                         </div>
                                     </div>
@@ -269,7 +280,7 @@ $getUsagePercentage = function ($used, $limit) {
                                         <div class="w-32 h-1 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                                             <div 
                                                 class="h-full bg-emerald-500 rounded-full" 
-                                                style="width: {{ $getUsagePercentage($usage['urls_per_list'] ?? 0, $limits['urls_per_list']) }}%"
+                                                style="width: {{ $this->getUsagePercentage($usage['urls_per_list'] ?? 0, $limits['urls_per_list']) }}%"
                                             ></div>
                                         </div>
                                     </div>
@@ -286,7 +297,7 @@ $getUsagePercentage = function ($used, $limit) {
                                         <div class="w-32 h-1 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                                             <div 
                                                 class="h-full bg-emerald-500 rounded-full" 
-                                                style="width: {{ $getUsagePercentage($usage['collaborators'] ?? 0, $limits['collaborators']) }}%"
+                                                style="width: {{ $this->getUsagePercentage($usage['collaborators'] ?? 0, $limits['collaborators']) }}%"
                                             ></div>
                                         </div>
                                     </div>

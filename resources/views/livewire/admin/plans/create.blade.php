@@ -1,78 +1,78 @@
 <?php
 
-use function Livewire\Volt\{state};
+use Livewire\Volt\Component;
 use App\Models\Plan;
 use Illuminate\Support\Str;
 
-state([
-    'name' => '',
-    'description' => '',
-    'monthlyPrice' => 0,
-    'yearlyPrice' => 0,
-    'maxLists' => -1,
-    'maxUrlsPerList' => -1,
-    'maxTeamMembers' => -1,
-    'features' => [],
-    'isActive' => true,
-    'isFeatured' => false,
-    'feature' => '',
-]);
+new class extends Component {
+    public $name = '';
+    public $description = '';
+    public $monthlyPrice = 0;
+    public $yearlyPrice = 0;
+    public $maxLists = -1;
+    public $maxUrlsPerList = -1;
+    public $maxTeamMembers = -1;
+    public $features = [];
+    public $isActive = true;
+    public $isFeatured = false;
+    public $feature = '';
 
-$addFeature = function () {
-    if (!empty($this->feature)) {
-        $this->features[] = $this->feature;
-        $this->feature = '';
+    public function addFeature() {
+        if (!empty($this->feature)) {
+            $this->features[] = $this->feature;
+            $this->feature = '';
+        }
     }
-};
 
-$removeFeature = function ($index) {
-    unset($this->features[$index]);
-    $this->features = array_values($this->features);
-};
+    public function removeFeature($index) {
+        unset($this->features[$index]);
+        $this->features = array_values($this->features);
+    }
 
-$createPlan = function () {
-    $this->validate([
-        'name' => 'required|string|max:255|unique:plans,name',
-        'description' => 'required|string|max:1000',
-        'monthlyPrice' => 'required|numeric|min:0',
-        'yearlyPrice' => 'required|numeric|min:0',
-        'maxLists' => 'required|integer|min:-1',
-        'maxUrlsPerList' => 'required|integer|min:-1',
-        'maxTeamMembers' => 'required|integer|min:-1',
-        'features' => 'required|array',
-        'isActive' => 'boolean',
-        'isFeatured' => 'boolean',
-    ]);
+    public function createPlan() {
+        $this->validate([
+            'name' => 'required|string|max:255|unique:plans,name',
+            'description' => 'required|string|max:1000',
+            'monthlyPrice' => 'required|numeric|min:0',
+            'yearlyPrice' => 'required|numeric|min:0',
+            'maxLists' => 'required|integer|min:-1',
+            'maxUrlsPerList' => 'required|integer|min:-1',
+            'maxTeamMembers' => 'required|integer|min:-1',
+            'features' => 'required|array',
+            'isActive' => 'boolean',
+            'isFeatured' => 'boolean',
+        ]);
 
-    $plan = Plan::create([
-        'name' => $this->name,
-        'slug' => Str::slug($this->name),
-        'description' => $this->description,
-        'monthly_price' => $this->monthlyPrice,
-        'yearly_price' => $this->yearlyPrice,
-        'features' => $this->features,
-        'max_lists' => $this->maxLists,
-        'max_urls_per_list' => $this->maxUrlsPerList,
-        'max_team_members' => $this->maxTeamMembers,
-        'is_active' => $this->isActive,
-        'is_featured' => $this->isFeatured,
-    ]);
+        $plan = Plan::create([
+            'name' => $this->name,
+            'slug' => Str::slug($this->name),
+            'description' => $this->description,
+            'monthly_price' => $this->monthlyPrice,
+            'yearly_price' => $this->yearlyPrice,
+            'features' => $this->features,
+            'max_lists' => $this->maxLists,
+            'max_urls_per_list' => $this->maxUrlsPerList,
+            'max_team_members' => $this->maxTeamMembers,
+            'is_active' => $this->isActive,
+            'is_featured' => $this->isFeatured,
+        ]);
 
-    // Create initial version
-    $plan->createVersion([
-        'version' => '1.0.0',
-        'name' => $this->name,
-        'description' => $this->description,
-        'monthly_price' => $this->monthlyPrice,
-        'yearly_price' => $this->yearlyPrice,
-        'features' => $this->features,
-        'is_active' => true,
-        'valid_from' => now(),
-    ]);
+        // Create initial version
+        $plan->createVersion([
+            'version' => '1.0.0',
+            'name' => $this->name,
+            'description' => $this->description,
+            'monthly_price' => $this->monthlyPrice,
+            'yearly_price' => $this->yearlyPrice,
+            'features' => $this->features,
+            'is_active' => true,
+            'valid_from' => now(),
+        ]);
 
-    session()->flash('success', 'Plan created successfully.');
-    return redirect()->route('admin.plans.index');
-};
+        session()->flash('success', 'Plan created successfully.');
+        return redirect()->route('admin.plans.index');
+    }
+}
 
 ?>
 

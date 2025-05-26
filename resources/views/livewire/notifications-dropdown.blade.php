@@ -1,72 +1,80 @@
 <?php
 
-use function Livewire\Volt\{state, mount, computed};
+use Livewire\Volt\Component;
+use Livewire\Attributes\Computed;
 use Illuminate\Support\Facades\Auth;
 
-state([
-    'unreadCount' => 0,
-    'showDropdown' => false,
-]);
+new class extends Component {
+    public int $unreadCount = 0;
+    public bool $showDropdown = false;
 
-mount(function () {
-    $this->loadNotifications();
-});
-
-$loadNotifications = function () {
-    $this->unreadCount = Auth::user()->unreadNotifications()->count();
-};
-
-$toggleDropdown = function () {
-    $this->showDropdown = !$this->showDropdown;
-    if ($this->showDropdown) {
-        $this->dispatch('dropdown-opened');
-    }
-};
-
-$markAsRead = function ($notificationId) {
-    try {
-        $notification = Auth::user()->notifications()->findOrFail($notificationId);
-        $notification->markAsRead();
-        
-        $this->dispatch('swal:toast', [
-            'type' => 'success',
-            'title' => 'Notification marked as read'
-        ]);
-    } catch (\Exception $e) {
-        $this->dispatch('swal:toast', [
-            'type' => 'error',
-            'title' => 'Could not mark notification as read'
-        ]);
+    public function mount(): void
+    {
+        $this->loadNotifications();
     }
 
-    $this->loadNotifications();
-};
-
-$markAllAsRead = function () {
-    try {
-        Auth::user()->unreadNotifications->markAsRead();
-        
-        $this->dispatch('swal:toast', [
-            'type' => 'success',
-            'title' => 'All notifications marked as read'
-        ]);
-    } catch (\Exception $e) {
-        $this->dispatch('swal:toast', [
-            'type' => 'error',
-            'title' => 'Could not mark notifications as read'
-        ]);
+    public function loadNotifications(): void
+    {
+        $this->unreadCount = Auth::user()->unreadNotifications()->count();
     }
 
-    $this->loadNotifications();
-};
+    public function toggleDropdown(): void
+    {
+        $this->showDropdown = !$this->showDropdown;
+        if ($this->showDropdown) {
+            $this->dispatch('dropdown-opened');
+        }
+    }
 
-$notifications = computed(function () {
-    return Auth::user()
-        ->notifications()
-        ->latest()
-        ->take(5)
-        ->get();
-});
+    public function markAsRead($notificationId): void
+    {
+        try {
+            $notification = Auth::user()->notifications()->findOrFail($notificationId);
+            $notification->markAsRead();
+            
+            $this->dispatch('swal:toast', [
+                'type' => 'success',
+                'title' => 'Notification marked as read'
+            ]);
+        } catch (\Exception $e) {
+            $this->dispatch('swal:toast', [
+                'type' => 'error',
+                'title' => 'Could not mark notification as read'
+            ]);
+        }
+
+        $this->loadNotifications();
+    }
+
+    public function markAllAsRead(): void
+    {
+        try {
+            Auth::user()->unreadNotifications->markAsRead();
+            
+            $this->dispatch('swal:toast', [
+                'type' => 'success',
+                'title' => 'All notifications marked as read'
+            ]);
+        } catch (\Exception $e) {
+            $this->dispatch('swal:toast', [
+                'type' => 'error',
+                'title' => 'Could not mark notifications as read'
+            ]);
+        }
+
+        $this->loadNotifications();
+    }
+    
+    #[Computed]
+    public function notifications()
+    {
+        return Auth::user()
+            ->notifications()
+            ->latest()
+            ->take(5)
+            ->get();
+    }
+}
 
 ?>
 

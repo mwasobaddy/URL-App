@@ -1,94 +1,100 @@
 <?php
 
-use function Livewire\Volt\{state, computed, mount};
 use App\Models\Subscription;
 use App\Models\Plan;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Livewire\Volt\Component;
 
-state([
-    'dateRange' => '30', // days
-    'loading' => false
-]);
+new class extends Component
+{
+    public $dateRange = '30'; // days
+    public $loading = false;
 
-$getSubscriptionMetrics = function() {
-    $endDate = now();
-    $startDate = now()->subDays($this->dateRange);
-    
-    // Active subscriptions trend
-    $activeSubscriptions = Subscription::where('status', 'active')
-        ->whereNull('cancelled_at')
-        ->count();
+    public function getSubscriptionMetrics()
+    {
+        $endDate = now();
+        $startDate = now()->subDays($this->dateRange);
+        
+        // Active subscriptions trend
+        $activeSubscriptions = Subscription::where('status', 'active')
+            ->whereNull('cancelled_at')
+            ->count();
 
-    // Trial conversions
-    $trialConversions = Subscription::where('status', 'active')
-        ->whereNotNull('trial_ends_at')
-        ->where('trial_ends_at', '<', now())
-        ->whereBetween('updated_at', [$startDate, $endDate])
-        ->count();
+        // Trial conversions
+        $trialConversions = Subscription::where('status', 'active')
+            ->whereNotNull('trial_ends_at')
+            ->where('trial_ends_at', '<', now())
+            ->whereBetween('updated_at', [$startDate, $endDate])
+            ->count();
 
-    $totalTrials = Subscription::whereNotNull('trial_ends_at')
-        ->whereBetween('created_at', [$startDate, $endDate])
-        ->count();
+        $totalTrials = Subscription::whereNotNull('trial_ends_at')
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->count();
 
-    $conversionRate = $totalTrials > 0 ? ($trialConversions / $totalTrials) * 100 : 0;
+        $conversionRate = $totalTrials > 0 ? ($trialConversions / $totalTrials) * 100 : 0;
 
-    // Churn analysis
-    $cancelledSubscriptions = Subscription::whereNotNull('cancelled_at')
-        ->whereBetween('cancelled_at', [$startDate, $endDate])
-        ->count();
+        // Churn analysis
+        $cancelledSubscriptions = Subscription::whereNotNull('cancelled_at')
+            ->whereBetween('cancelled_at', [$startDate, $endDate])
+            ->count();
 
-    $totalActiveStart = Subscription::where('status', 'active')
-        ->where('created_at', '<', $startDate)
-        ->count();
+        $totalActiveStart = Subscription::where('status', 'active')
+            ->where('created_at', '<', $startDate)
+            ->count();
 
-    $churnRate = $totalActiveStart > 0 ? ($cancelledSubscriptions / $totalActiveStart) * 100 : 0;
+        $churnRate = $totalActiveStart > 0 ? ($cancelledSubscriptions / $totalActiveStart) * 100 : 0;
 
-    // MRR/ARR Calculations
-    $mrr = Subscription::where('status', 'active')
-        ->whereNull('cancelled_at')
-        ->whereNull('trial_ends_at')
-        ->orWhere('trial_ends_at', '<', now())
-        ->with('planVersion')
-        ->get()
-        ->sum(function ($subscription) {
-            return $subscription->interval === 'yearly'
-                ? $subscription->planVersion->yearly_price / 12
-                : $subscription->planVersion->monthly_price;
-        });
+        // MRR/ARR Calculations
+        $mrr = Subscription::where('status', 'active')
+            ->whereNull('cancelled_at')
+            ->whereNull('trial_ends_at')
+            ->orWhere('trial_ends_at', '<', now())
+            ->with('planVersion')
+            ->get()
+            ->sum(function ($subscription) {
+                return $subscription->interval === 'yearly'
+                    ? $subscription->planVersion->yearly_price / 12
+                    : $subscription->planVersion->monthly_price;
+            });
 
-    $arr = $mrr * 12;
+        $arr = $mrr * 12;
 
-    // Daily Revenue Trend
-    $dailyRevenue = Subscription::where('status', 'active')
-        ->whereBetween('created_at', [$startDate, $endDate])
-        ->selectRaw('DATE(created_at) as date, SUM(CASE 
-            WHEN interval = "yearly" THEN plan_versions.yearly_price
-            ELSE plan_versions.monthly_price 
-            END) as revenue')
-        ->join('plan_versions', 'subscriptions.plan_version_id', '=', 'plan_versions.id')
-        ->groupBy('date')
-        ->orderBy('date')
-        ->get();
+        // Daily Revenue Trend
+        $dailyRevenue = Subscription::where('status', 'active')
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->selectRaw('DATE(created_at) as date, SUM(CASE 
+                WHEN interval = "yearly" THEN plan_versions.yearly_price
+                ELSE plan_versions.monthly_price 
+                END) as revenue')
+            ->join('plan_versions', 'subscriptions.plan_version_id', '=', 'plan_versions.id')
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get();
 
-    return [
-        'active_count' => $activeSubscriptions,
-        'trial_conversions' => $trialConversions,
-        'conversion_rate' => round($conversionRate, 2),
-        'churn_rate' => round($churnRate, 2),
-        'mrr' => round($mrr, 2),
-        'arr' => round($arr, 2),
-        'revenue_trend' => $dailyRevenue,
-    ];
-};
+        return [
+            'active_count' => $activeSubscriptions,
+            'trial_conversions' => $trialConversions,
+            'conversion_rate' => round($conversionRate, 2),
+            'churn_rate' => round($churnRate, 2),
+            'mrr' => round($mrr, 2),
+            'arr' => round($arr, 2),
+            'revenue_trend' => $dailyRevenue,
+        ];
+    }
 
-$metrics = computed(function () {
-    return $this->getSubscriptionMetrics();
-});
+    public function with(): array
+    {
+        return [
+            'metrics' => $this->getSubscriptionMetrics()
+        ];
+    }
 
-$updateDateRange = function ($days) {
-    $this->dateRange = $days;
-};
+    public function updateDateRange($days)
+    {
+        $this->dateRange = $days;
+    }
+}
 
 ?>
 

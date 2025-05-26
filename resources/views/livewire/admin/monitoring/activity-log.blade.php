@@ -1,50 +1,12 @@
 <?php
 
-use function Livewire\Volt\{state, computed, mount};
+use Livewire\Volt\Component;
 use App\Services\AuditLogService;
 use Carbon\Carbon;
 
-state([
-    'filter' => [
-        'event' => '',
-        'user_id' => '',
-        'type' => '',
-        'tag' => '',
-        'date_from' => '',
-        'date_to' => '',
-        'per_page' => 15,
-    ],
-    'selectedTab' => 'all', // all, user, system, security
-    'logs' => [],
-    'statistics' => [],
-]);
-
-$mount = function (AuditLogService $auditLogService) {
-    $this->refreshLogs($auditLogService);
-    $this->statistics = $auditLogService->getEventStatistics();
-};
-
-$refreshLogs = function (AuditLogService $auditLogService) {
-    $filters = $this->filter;
-    
-    if ($this->selectedTab !== 'all') {
-        $filters['tag'] = $this->selectedTab;
-    }
-    
-    $this->logs = match ($this->selectedTab) {
-        'security' => $auditLogService->getSecurityEvents($filters),
-        'system' => $auditLogService->getSystemEvents($filters),
-        default => $auditLogService->getActivityLogs($filters),
-    };
-};
-
-$selectTab = function (string $tab) {
-    $this->selectedTab = $tab;
-    $this->refreshLogs(app(AuditLogService::class));
-};
-
-$resetFilters = function () {
-    $this->filter = [
+new class extends Component 
+{
+    public array $filter = [
         'event' => '',
         'user_id' => '',
         'type' => '',
@@ -53,11 +15,55 @@ $resetFilters = function () {
         'date_to' => '',
         'per_page' => 15,
     ];
-    $this->refreshLogs(app(AuditLogService::class));
-};
+    public string $selectedTab = 'all'; // all, user, system, security
+    public array $logs = [];
+    public array $statistics = [];
 
-$applyFilters = function () {
-    $this->refreshLogs(app(AuditLogService::class));
+    public function mount(AuditLogService $auditLogService)
+    {
+        $this->refreshLogs($auditLogService);
+        $this->statistics = $auditLogService->getEventStatistics();
+    }
+
+    public function refreshLogs(AuditLogService $auditLogService)
+    {
+        $filters = $this->filter;
+        
+        if ($this->selectedTab !== 'all') {
+            $filters['tag'] = $this->selectedTab;
+        }
+        
+        $this->logs = match ($this->selectedTab) {
+            'security' => $auditLogService->getSecurityEvents($filters),
+            'system' => $auditLogService->getSystemEvents($filters),
+            default => $auditLogService->getActivityLogs($filters),
+        };
+    }
+
+    public function selectTab(string $tab)
+    {
+        $this->selectedTab = $tab;
+        $this->refreshLogs(app(AuditLogService::class));
+    }
+
+    public function resetFilters()
+    {
+        $this->filter = [
+            'event' => '',
+            'user_id' => '',
+            'type' => '',
+            'tag' => '',
+            'date_from' => '',
+            'date_to' => '',
+            'per_page' => 15,
+        ];
+        $this->refreshLogs(app(AuditLogService::class));
+    }
+
+    public function applyFilters()
+    {
+        $this->refreshLogs(app(AuditLogService::class));
+    }
 };
 
 ?>

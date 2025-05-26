@@ -1,40 +1,40 @@
 <?php
 
-use function Livewire\Volt\{state, mount};
+use Livewire\Volt\Component;
 use App\Models\Plan;
 use App\Services\PayPalSubscriptionService;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 
-#[Layout('layouts.app')]
-#[Title('Subscribe')]
-
-state([
-    'plan' => null,
-    'interval' => 'monthly',
-    'paypalSubscriptionId' => null,
-    'error' => null,
-]);
-
-mount(function (Plan $plan, string $interval = 'monthly') {
-    $this->plan = $plan;
-    $this->interval = $interval;
-});
-
-$subscribe = function () {
-    try {
-        $paypalService = new PayPalSubscriptionService();
-        $subscription = $paypalService->createSubscription(
-            auth()->user(),
-            $this->plan,
-            $this->interval
-        );
-
-        return redirect()->to($subscription->approval_url);
-    } catch (\Exception $e) {
-        $this->error = 'Failed to create subscription. Please try again.';
+new #[Layout('layouts.app')] #[Title('Subscribe')] class extends Component
+{
+    public ?Plan $plan = null;
+    public string $interval = 'monthly';
+    public ?string $paypalSubscriptionId = null;
+    public ?string $error = null;
+    
+    public function mount(Plan $plan, string $interval = 'monthly')
+    {
+        $this->plan = $plan;
+        $this->interval = $interval;
     }
-};
+    
+    public function subscribe()
+    {
+        try {
+            $paypalService = new PayPalSubscriptionService();
+            $subscription = $paypalService->createSubscription(
+                auth()->user(),
+                $this->plan,
+                $this->interval
+            );
+
+            return redirect()->to($subscription->approval_url);
+        } catch (\Exception $e) {
+            $this->error = 'Failed to create subscription. Please try again.';
+        }
+    }
+}
 
 ?>
 

@@ -1,48 +1,49 @@
 <?php
 
-use function Livewire\Volt\{state, mount};
 use App\Models\Subscription;
 use App\Services\PayPalSubscriptionService;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
+use Livewire\Volt\Component;
 
-#[Layout('layouts.app')]
-#[Title('Manage Subscription')]
+new #[Layout('layouts.app')] #[Title('Manage Subscription')] class extends Component
+{
+    public $subscription = null;
+    public $error = null;
 
-state([
-    'subscription' => null,
-    'error' => null,
-]);
+    public function mount()
+    {
+        $this->subscription = auth()->user()->subscription;
+    }
 
-mount(function () {
-    $this->subscription = auth()->user()->subscription;
-});
+    public function cancelSubscription()
+    {
+        try {
+            $paypalService = new PayPalSubscriptionService();
+            $success = $paypalService->cancelSubscription($this->subscription);
 
-$cancelSubscription = function () {
-    try {
-        $paypalService = new PayPalSubscriptionService();
-        $success = $paypalService->cancelSubscription($this->subscription);
+            if ($success) {
+                session()->flash('success', 'Your subscription has been cancelled.');
+                return redirect()->route('subscription.cancelled');
+            }
 
-        if ($success) {
-            session()->flash('success', 'Your subscription has been cancelled.');
-            return redirect()->route('subscription.cancelled');
+            $this->error = 'Failed to cancel subscription. Please try again.';
+        } catch (\Exception $e) {
+            $this->error = 'Failed to cancel subscription. Please try again.';
         }
-
-        $this->error = 'Failed to cancel subscription. Please try again.';
-    } catch (\Exception $e) {
-        $this->error = 'Failed to cancel subscription. Please try again.';
     }
-};
 
-$resumeSubscription = function () {
-    try {
-        $this->subscription->resume();
-        session()->flash('success', 'Your subscription has been resumed.');
-        return redirect()->route('subscription.resumed');
-    } catch (\Exception $e) {
-        $this->error = 'Failed to resume subscription. Please try again.';
+    public function resumeSubscription()
+    {
+        try {
+            $this->subscription->resume();
+            session()->flash('success', 'Your subscription has been resumed.');
+            return redirect()->route('subscription.resumed');
+        } catch (\Exception $e) {
+            $this->error = 'Failed to resume subscription. Please try again.';
+        }
     }
-};
+}
 
 ?>
 

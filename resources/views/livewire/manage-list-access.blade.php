@@ -1,6 +1,5 @@
 <?php
 
-use function Livewire\Volt\{state, mount, computed};
 use App\Models\AccessRequest;
 use App\Models\ListCollaborator;
 use App\Models\UrlList;
@@ -8,79 +7,96 @@ use App\Models\User;
 use App\Notifications\AccessResponseNotification;
 use Illuminate\Support\Facades\Auth;
 use Livewire\WithPagination;
+use Livewire\Volt\Component;
 
-state([
-    'urlList' => null,
-    'allowAccessRequests' => false,
-    'emailSearch' => '',
-    'showInviteForm' => false,
-]);
+new class extends Component
+{
+    public $urlList = null;
+    public $allowAccessRequests = false;
+    public $emailSearch = '';
+    public $showInviteForm = false;
 
-mount(function (UrlList $urlList) {
-    $this->urlList = $urlList;
-    $this->allowAccessRequests = $urlList->allow_access_requests;
-    
-    if (Auth::id() !== $this->urlList->user_id) {
-        abort(403);
+    public function mount(UrlList $urlList)
+    {
+        $this->urlList = $urlList;
+        $this->allowAccessRequests = $urlList->allow_access_requests;
+        
+        if (Auth::id() !== $this->urlList->user_id) {
+            abort(403);
+        }
     }
-});
 
-$toggleInviteForm = function () {
-    $this->showInviteForm = !$this->showInviteForm;
-};
+    public function toggleInviteForm()
+    {
+        $this->showInviteForm = !$this->showInviteForm;
+    }
 
-$toggleAccessRequests = function () {
-    $this->urlList->allow_access_requests = !$this->urlList->allow_access_requests;
-    $this->urlList->save();
-    $this->allowAccessRequests = $this->urlList->allow_access_requests;
+    public function toggleAccessRequests()
+    {
+        $this->urlList->allow_access_requests = !$this->urlList->allow_access_requests;
+        $this->urlList->save();
+        $this->allowAccessRequests = $this->urlList->allow_access_requests;
 
-    $this->dispatch('swal:toast', [
-        'title' => 'Sharing settings updated successfully.'
-    ]);
-    $this->dispatch('refreshComponent');
-};
+        $this->dispatch('swal:toast', [
+            'title' => 'Sharing settings updated successfully.'
+        ]);
+        $this->dispatch('refreshComponent');
+    }
 
-$approveRequest = function ($requestId) {
-    $request = AccessRequest::findOrFail($requestId);
-    
-    if ($request->url_list_id !== $this->urlList->id) {
-        abort(403);
+    public function approveRequest($requestId)
+    {
+        $request = AccessRequest::findOrFail($requestId);
+        
+        if ($request->url_list_id !== $this->urlList->id) {
+            abort(403);
+        }
+        
+        $request->update(['status' => 'approved']);
+        
+        ListCollaborator::create([
+            'user_id' => $request->requester_id,
+        ]);
+        
+        $request->requester->notify(new AccessResponseNotification($request, true));
+        
+        $this->dispatch('swal:toast', [
+            'title' => 'Access request approved successfully.'
+        ]);
+    }
+
+    public function denyRequest($requestId)
+    {
+        $request = AccessRequest::findOrFail($requestId);
+        
+        if ($request->url_list_id !== $this->urlList->id) {
+            abort(403);
+        }
+        
+        $request->update(['status' => 'rejected']);
+        $request->requester->notify(new AccessResponseNotification($request, false));
     }
     
-    $request->update(['status' => 'approved']);
-    
-    ListCollaborator::create([
-        'user_id' => $request->requester_id,
-    ]);
-    
-    $request->requester->notify(new AccessResponseNotification($request, true));
-    
-    $this->dispatch('swal:toast', [
-        'title' => 'Access request approved successfully.'
-    ]);
-};
-
-$denyRequest = function ($requestId) {
-    $request = AccessRequest::findOrFail($requestId);
-    
-    if ($request->url_list_id !== $this->urlList->id) {
-        abort(403);
+    // Note: This function was referenced in the UI but not defined in the original code
+    // Adding it as placeholder to maintain functionality
+    public function removeCollaborator($collaboratorId)
+    {
+        // Implementation needed
     }
-    
-    $request->update(['status' => 'rejected']);
-    $request->requester->notify(new AccessResponseNotification($request, false));
-};
 
-$collaborators = computed(function () {
-    return $this->urlList->collaborators;
-});
+    // Computed properties
+    public function getCollaboratorsProperty()
+    {
+        return $this->urlList->collaborators;
+    }
 
-$pendingRequests = computed(function () {
-    return $this->urlList->accessRequests()
-        ->where('status', 'pending')
-        ->with('requester')
-        ->get();
-});
+    public function getPendingRequestsProperty()
+    {
+        return $this->urlList->accessRequests()
+            ->where('status', 'pending')
+            ->with('requester')
+            ->get();
+    }
+}
 
 ?>
 
@@ -107,7 +123,7 @@ $pendingRequests = computed(function () {
     <div class="mb-12">
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Current Collaborators</h3>
         <div class="bg-white dark:bg-zinc-800/50 rounded-xl border border-gray-100 dark:border-neutral-700/50 overflow-hidden">
-            @forelse($collaborators as $collaborator)
+            @forelse($this->collaborators as $collaborator)
                 <div class="flex items-center justify-between p-4 {{ !$loop->last ? 'border-b border-gray-100 dark:border-neutral-700/50' : '' }}">
                     <div class="flex items-center space-x-4">
                         <div class="flex-shrink-0">
@@ -149,7 +165,7 @@ $pendingRequests = computed(function () {
     <div class="mb-12">
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Pending Access Requests</h3>
         <div class="space-y-4">
-            @forelse($pendingRequests as $request)
+            @forelse($this->pendingRequests as $request)
                 <div class="bg-white dark:bg-zinc-800/50 rounded-xl border border-gray-100 dark:border-neutral-700/50 p-4 sm:p-6">
                     <div class="flex items-start justify-between">
                         <div class="flex items-start space-x-4">

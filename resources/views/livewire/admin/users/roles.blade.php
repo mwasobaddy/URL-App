@@ -1,105 +1,113 @@
 <?php
 
-use function Livewire\Volt\{state, computed, mount};
+use Livewire\Volt\Component;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
 use Illuminate\Support\Str;
 
-state([
-    'roles' => [],
-    'permissions' => [],
-    'showCreateModal' => false,
-    'showEditModal' => false,
-    'showDeleteModal' => false,
-    'editingRole' => null,
-    'form' => [
-        'name' => '',
-        'permissions' => [],
-    ],
-]);
-
-mount(function () {
-    $this->refreshData();
-});
-
-$refreshData = function () {
-    $this->roles = Role::with('permissions')->get();
-    $this->permissions = Permission::all();
-};
-
-$createRole = function () {
-    $this->validate([
-        'form.name' => 'required|string|max:255|unique:roles,name',
-        'form.permissions' => 'required|array',
-    ]);
-
-    $role = Role::create(['name' => $this->form['name']]);
-    $role->syncPermissions($this->form['permissions']);
-
-    $this->resetForm();
-    $this->refreshData();
-    $this->showCreateModal = false;
-
-    $this->dispatch('swal:toast', [
-        'type' => 'success',
-        'message' => 'Role created successfully.',
-    ]);
-};
-
-$editRole = function (Role $role) {
-    $this->editingRole = $role;
-    $this->form = [
-        'name' => $role->name,
-        'permissions' => $role->permissions->pluck('name')->toArray(),
-    ];
-    $this->showEditModal = true;
-};
-
-$updateRole = function () {
-    $this->validate([
-        'form.name' => 'required|string|max:255|unique:roles,name,' . $this->editingRole->id,
-        'form.permissions' => 'required|array',
-    ]);
-
-    $this->editingRole->update(['name' => $this->form['name']]);
-    $this->editingRole->syncPermissions($this->form['permissions']);
-
-    $this->resetForm();
-    $this->refreshData();
-    $this->showEditModal = false;
-
-    $this->dispatch('swal:toast', [
-        'type' => 'success',
-        'message' => 'Role updated successfully.',
-    ]);
-};
-
-$confirmDelete = function (Role $role) {
-    $this->editingRole = $role;
-    $this->showDeleteModal = true;
-};
-
-$deleteRole = function () {
-    $this->editingRole->delete();
-    
-    $this->editingRole = null;
-    $this->refreshData();
-    $this->showDeleteModal = false;
-
-    $this->dispatch('swal:toast', [
-        'type' => 'success',
-        'message' => 'Role deleted successfully.',
-    ]);
-};
-
-$resetForm = function () {
-    $this->form = [
+new class extends Component
+{
+    public array $roles = [];
+    public array $permissions = [];
+    public bool $showCreateModal = false;
+    public bool $showEditModal = false;
+    public bool $showDeleteModal = false;
+    public $editingRole = null;
+    public array $form = [
         'name' => '',
         'permissions' => [],
     ];
-    $this->editingRole = null;
-};
 
+    public function mount()
+    {
+        $this->refreshData();
+    }
+
+    public function refreshData()
+    {
+        $this->roles = Role::with('permissions')->get();
+        $this->permissions = Permission::all();
+    }
+
+    public function createRole()
+    {
+        $this->validate([
+            'form.name' => 'required|string|max:255|unique:roles,name',
+            'form.permissions' => 'required|array',
+        ]);
+
+        $role = Role::create(['name' => $this->form['name']]);
+        $role->syncPermissions($this->form['permissions']);
+
+        $this->resetForm();
+        $this->refreshData();
+        $this->showCreateModal = false;
+
+        $this->dispatch('swal:toast', [
+            'type' => 'success',
+            'message' => 'Role created successfully.',
+        ]);
+    }
+
+    public function editRole(Role $role)
+    {
+        $this->editingRole = $role;
+        $this->form = [
+            'name' => $role->name,
+            'permissions' => $role->permissions->pluck('name')->toArray(),
+        ];
+        $this->showEditModal = true;
+    }
+
+    public function updateRole()
+    {
+        $this->validate([
+            'form.name' => 'required|string|max:255|unique:roles,name,' . $this->editingRole->id,
+            'form.permissions' => 'required|array',
+        ]);
+
+        $this->editingRole->update(['name' => $this->form['name']]);
+        $this->editingRole->syncPermissions($this->form['permissions']);
+
+        $this->resetForm();
+        $this->refreshData();
+        $this->showEditModal = false;
+
+        $this->dispatch('swal:toast', [
+            'type' => 'success',
+            'message' => 'Role updated successfully.',
+        ]);
+    }
+
+    public function confirmDelete(Role $role)
+    {
+        $this->editingRole = $role;
+        $this->showDeleteModal = true;
+    }
+
+    public function deleteRole()
+    {
+        $this->editingRole->delete();
+        
+        $this->editingRole = null;
+        $this->refreshData();
+        $this->showDeleteModal = false;
+
+        $this->dispatch('swal:toast', [
+            'type' => 'success',
+            'message' => 'Role deleted successfully.',
+        ]);
+    }
+
+    public function resetForm()
+    {
+        $this->form = [
+            'name' => '',
+            'permissions' => [],
+        ];
+        $this->editingRole = null;
+    }
+}
 ?>
 
 <div>

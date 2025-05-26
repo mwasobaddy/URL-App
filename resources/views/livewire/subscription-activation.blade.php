@@ -1,40 +1,45 @@
 <?php
 
-use function Livewire\Volt\{state, mount, computed};
 use App\Services\PayPalSubscriptionService;
 use App\Models\Subscription;
 use Illuminate\Support\Facades\Log;
+use Livewire\Volt\Component;
 
-state([
-    'subscription' => null,
-    'status' => 'pending',
-    'error' => null,
-]);
-
-mount(function (Subscription $subscription) {
-    $this->subscription = $subscription;
-    $this->activateSubscription();
-});
-
-$activateSubscription = function () {
-    try {
-        $paypalService = app(PayPalSubscriptionService::class);
-        $paypalService->processSuccessfulSubscription($this->subscription);
-        
-        $this->status = 'success';
-        $this->dispatch('subscription-activated', subscriptionId: $this->subscription->id);
-        
-        $this->redirect(route('dashboard'), navigate: true);
-    } catch (\Exception $e) {
-        Log::error('Subscription activation failed', [
-            'subscription_id' => $this->subscription->id,
-            'error' => $e->getMessage()
-        ]);
-        
-        $this->status = 'failed';
-        $this->error = 'Failed to activate subscription. Please try again or contact support.';
+new class extends Component {
+    // State as public properties
+    public $subscription = null;
+    public $status = 'pending';
+    public $error = null;
+    
+    // Mount method
+    public function mount(Subscription $subscription)
+    {
+        $this->subscription = $subscription;
+        $this->activateSubscription();
     }
-};
+    
+    // Action as method
+    public function activateSubscription()
+    {
+        try {
+            $paypalService = app(PayPalSubscriptionService::class);
+            $paypalService->processSuccessfulSubscription($this->subscription);
+            
+            $this->status = 'success';
+            $this->dispatch('subscription-activated', subscriptionId: $this->subscription->id);
+            
+            $this->redirect(route('dashboard'), navigate: true);
+        } catch (\Exception $e) {
+            Log::error('Subscription activation failed', [
+                'subscription_id' => $this->subscription->id,
+                'error' => $e->getMessage()
+            ]);
+            
+            $this->status = 'failed';
+            $this->error = 'Failed to activate subscription. Please try again or contact support.';
+        }
+    }
+}
 
 ?>
 

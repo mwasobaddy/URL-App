@@ -1,129 +1,136 @@
 <?php
 
-use function Livewire\Volt\{state, mount, computed};
+use Livewire\Volt\Component;
 use App\Models\Plan;
 
-state([
-    'plan' => null,
-    'name' => '',
-    'description' => '',
-    'monthlyPrice' => 0,
-    'yearlyPrice' => 0,
-    'maxLists' => -1,
-    'maxUrlsPerList' => -1,
-    'maxTeamMembers' => -1,
-    'features' => [],
-    'isActive' => true,
-    'isFeatured' => false,
-    'feature' => '',
-    'showVersionModal' => false,
-    'newVersion' => '',
-    'validFrom' => '',
-]);
+new class extends Component {
+    // Properties
+    public $plan = null;
+    public $name = '';
+    public $description = '';
+    public $monthlyPrice = 0;
+    public $yearlyPrice = 0;
+    public $maxLists = -1;
+    public $maxUrlsPerList = -1;
+    public $maxTeamMembers = -1;
+    public $features = [];
+    public $isActive = true;
+    public $isFeatured = false;
+    public $feature = '';
+    public $showVersionModal = false;
+    public $newVersion = '';
+    public $validFrom = '';
 
-mount(function (Plan $plan) {
-    $this->plan = $plan;
-    $this->name = $plan->name;
-    $this->description = $plan->description;
-    $this->monthlyPrice = $plan->monthly_price;
-    $this->yearlyPrice = $plan->yearly_price;
-    $this->maxLists = $plan->max_lists;
-    $this->maxUrlsPerList = $plan->max_urls_per_list;
-    $this->maxTeamMembers = $plan->max_team_members;
-    $this->features = $plan->features;
-    $this->isActive = $plan->is_active;
-    $this->isFeatured = $plan->is_featured;
-});
-
-$addFeature = function () {
-    if (!empty($this->feature)) {
-        $this->features[] = $this->feature;
-        $this->feature = '';
+    // Mount method
+    public function mount(Plan $plan) {
+        $this->plan = $plan;
+        $this->name = $plan->name;
+        $this->description = $plan->description;
+        $this->monthlyPrice = $plan->monthly_price;
+        $this->yearlyPrice = $plan->yearly_price;
+        $this->maxLists = $plan->max_lists;
+        $this->maxUrlsPerList = $plan->max_urls_per_list;
+        $this->maxTeamMembers = $plan->max_team_members;
+        $this->features = $plan->features;
+        $this->isActive = $plan->is_active;
+        $this->isFeatured = $plan->is_featured;
     }
-};
 
-$removeFeature = function ($index) {
-    unset($this->features[$index]);
-    $this->features = array_values($this->features);
-};
+    // Add feature method
+    public function addFeature() {
+        if (!empty($this->feature)) {
+            $this->features[] = $this->feature;
+            $this->feature = '';
+        }
+    }
 
-$updatePlan = function () {
-    $this->validate([
-        'name' => 'required|string|max:255|unique:plans,name,' . $this->plan->id,
-        'description' => 'required|string|max:1000',
-        'monthlyPrice' => 'required|numeric|min:0',
-        'yearlyPrice' => 'required|numeric|min:0',
-        'maxLists' => 'required|integer|min:-1',
-        'maxUrlsPerList' => 'required|integer|min:-1',
-        'maxTeamMembers' => 'required|integer|min:-1',
-        'features' => 'required|array',
-        'isActive' => 'boolean',
-        'isFeatured' => 'boolean',
-    ]);
+    // Remove feature method
+    public function removeFeature($index) {
+        unset($this->features[$index]);
+        $this->features = array_values($this->features);
+    }
 
-    $this->plan->update([
-        'name' => $this->name,
-        'description' => $this->description,
-        'monthly_price' => $this->monthlyPrice,
-        'yearly_price' => $this->yearlyPrice,
-        'features' => $this->features,
-        'max_lists' => $this->maxLists,
-        'max_urls_per_list' => $this->maxUrlsPerList,
-        'max_team_members' => $this->maxTeamMembers,
-        'is_active' => $this->isActive,
-        'is_featured' => $this->isFeatured,
-    ]);
+    // Update plan method
+    public function updatePlan() {
+        $this->validate([
+            'name' => 'required|string|max:255|unique:plans,name,' . $this->plan->id,
+            'description' => 'required|string|max:1000',
+            'monthlyPrice' => 'required|numeric|min:0',
+            'yearlyPrice' => 'required|numeric|min:0',
+            'maxLists' => 'required|integer|min:-1',
+            'maxUrlsPerList' => 'required|integer|min:-1',
+            'maxTeamMembers' => 'required|integer|min:-1',
+            'features' => 'required|array',
+            'isActive' => 'boolean',
+            'isFeatured' => 'boolean',
+        ]);
 
-    session()->flash('success', 'Plan updated successfully.');
-    return redirect()->route('admin.plans.index');
-};
+        $this->plan->update([
+            'name' => $this->name,
+            'description' => $this->description,
+            'monthly_price' => $this->monthlyPrice,
+            'yearly_price' => $this->yearlyPrice,
+            'features' => $this->features,
+            'max_lists' => $this->maxLists,
+            'max_urls_per_list' => $this->maxUrlsPerList,
+            'max_team_members' => $this->maxTeamMembers,
+            'is_active' => $this->isActive,
+            'is_featured' => $this->isFeatured,
+        ]);
 
-$showNewVersionModal = function () {
-    $latestVersion = $this->plan->versions()->max('version') ?? '0.0.0';
-    $versionParts = explode('.', $latestVersion);
-    $versionParts[2] = (int)$versionParts[2] + 1;
-    $this->newVersion = implode('.', $versionParts);
-    $this->validFrom = now()->format('Y-m-d\TH:i');
-    $this->showVersionModal = true;
-};
+        session()->flash('success', 'Plan updated successfully.');
+        return redirect()->route('admin.plans.index');
+    }
 
-$createVersion = function () {
-    $this->validate([
-        'newVersion' => 'required|string',
-        'validFrom' => 'required|date',
-    ]);
+    // Show modal method
+    public function showNewVersionModal() {
+        $latestVersion = $this->plan->versions()->max('version') ?? '0.0.0';
+        $versionParts = explode('.', $latestVersion);
+        $versionParts[2] = (int)$versionParts[2] + 1;
+        $this->newVersion = implode('.', $versionParts);
+        $this->validFrom = now()->format('Y-m-d\TH:i');
+        $this->showVersionModal = true;
+    }
 
-    // Deactivate current version
-    if ($currentVersion = $this->plan->getCurrentVersion()) {
-        $currentVersion->update([
-            'is_active' => false,
-            'valid_until' => $this->validFrom,
+    // Create version method
+    public function createVersion() {
+        $this->validate([
+            'newVersion' => 'required|string',
+            'validFrom' => 'required|date',
+        ]);
+
+        // Deactivate current version
+        if ($currentVersion = $this->plan->getCurrentVersion()) {
+            $currentVersion->update([
+                'is_active' => false,
+                'valid_until' => $this->validFrom,
+            ]);
+        }
+
+        // Create new version
+        $this->plan->createVersion([
+            'version' => $this->newVersion,
+            'name' => $this->name,
+            'description' => $this->description,
+            'monthly_price' => $this->monthlyPrice,
+            'yearly_price' => $this->yearlyPrice,
+            'features' => $this->features,
+            'is_active' => true,
+            'valid_from' => $this->validFrom,
+        ]);
+
+        $this->showVersionModal = false;
+        $this->dispatch('swal:toast', [
+            'type' => 'success',
+            'message' => 'New version created successfully.',
         ]);
     }
 
-    // Create new version
-    $this->plan->createVersion([
-        'version' => $this->newVersion,
-        'name' => $this->name,
-        'description' => $this->description,
-        'monthly_price' => $this->monthlyPrice,
-        'yearly_price' => $this->yearlyPrice,
-        'features' => $this->features,
-        'is_active' => true,
-        'valid_from' => $this->validFrom,
-    ]);
-
-    $this->showVersionModal = false;
-    $this->dispatch('swal:toast', [
-        'type' => 'success',
-        'message' => 'New version created successfully.',
-    ]);
-};
-
-$versions = computed(function () {
-    return $this->plan->versions()->orderByDesc('created_at')->get();
-});
-
+    // Computed property for versions
+    public function versions() {
+        return $this->plan->versions()->orderByDesc('created_at')->get();
+    }
+}
 ?>
 
 <div>
@@ -358,7 +365,7 @@ $versions = computed(function () {
             <div class="pt-6">
                 <h4 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Version History</h4>
                 <div class="bg-white dark:bg-zinc-800 shadow-sm rounded-lg divide-y divide-gray-200 dark:divide-zinc-700">
-                    @foreach($versions as $version)
+                    @foreach($this->versions() as $version)
                         <div class="p-4">
                             <div class="flex items-center justify-between">
                                 <div>

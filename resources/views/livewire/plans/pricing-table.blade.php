@@ -1,31 +1,32 @@
 <?php
 
-use function Livewire\Volt\{state, mount, computed};
+use Livewire\Volt\Component;
 use App\Models\Plan;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 
-#[Layout('layouts.app')]
-#[Title('Subscription Plans')]
+new #[Layout('layouts.app')] #[Title('Subscription Plans')] class extends Component
+{
+    public $interval = 'monthly';
+    public $plans = [];
 
-state([
-    'interval' => 'monthly',
-    'plans' => [],
-]);
+    public function mount()
+    {
+        $this->loadPlans();
+    }
 
-mount(function () {
-    $this->loadPlans();
-});
+    public function loadPlans()
+    {
+        $this->plans = Plan::where('is_active', true)
+            ->orderBy('monthly_price')
+            ->get();
+    }
 
-$loadPlans = function () {
-    $this->plans = Plan::where('is_active', true)
-        ->orderBy('monthly_price')
-        ->get();
-};
-
-$toggleInterval = function () {
-    $this->interval = $this->interval === 'monthly' ? 'yearly' : 'monthly';
-};
+    public function toggleInterval()
+    {
+        $this->interval = $this->interval === 'monthly' ? 'yearly' : 'monthly';
+    }
+}
 
 ?>
 

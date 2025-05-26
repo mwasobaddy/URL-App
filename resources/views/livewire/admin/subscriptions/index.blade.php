@@ -1,55 +1,62 @@
 <?php
 
-use function Livewire\Volt\{state, computed, mount};
+use Livewire\Volt\Component;
 use App\Models\Subscription;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Livewire\Attributes\Computed;
 
-state([
-    'search' => '',
-    'status' => '',
-    'perPage' => 10,
-    'sortField' => 'created_at',
-    'sortDirection' => 'desc'
-]);
-
-$subscriptions = computed(function (): LengthAwarePaginator {
-    return Subscription::query()
-        ->with(['user', 'plan', 'planVersion'])
-        ->when($this->search, function ($query) {
-            $query->whereHas('user', function ($q) {
-                $q->where('name', 'like', "%{$this->search}%")
-                    ->orWhere('email', 'like', "%{$this->search}%");
-            })->orWhereHas('plan', function ($q) {
-                $q->where('name', 'like', "%{$this->search}%");
-            });
-        })
-        ->when($this->status, function ($query) {
-            $query->where('status', $this->status);
-        })
-        ->orderBy($this->sortField, $this->sortDirection)
-        ->paginate($this->perPage);
-});
-
-$stats = computed(function () {
-    return [
-        'total' => Subscription::count(),
-        'active' => Subscription::where('status', 'active')->count(),
-        'trial' => Subscription::whereNotNull('trial_ends_at')
-            ->where('trial_ends_at', '>', now())
-            ->count(),
-        'cancelled' => Subscription::whereNotNull('cancelled_at')->count(),
-    ];
-});
-
-$sort = function (string $field) {
-    if ($this->sortField === $field) {
-        $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
-    } else {
-        $this->sortField = $field;
-        $this->sortDirection = 'asc';
+new class extends Component {
+    // State properties
+    public string $search = '';
+    public string $status = '';
+    public int $perPage = 10;
+    public string $sortField = 'created_at';
+    public string $sortDirection = 'desc';
+    
+    #[Computed]
+    public function subscriptions(): LengthAwarePaginator 
+    {
+        return Subscription::query()
+            ->with(['user', 'plan', 'planVersion'])
+            ->when($this->search, function ($query) {
+                $query->whereHas('user', function ($q) {
+                    $q->where('name', 'like', "%{$this->search}%")
+                        ->orWhere('email', 'like', "%{$this->search}%");
+                })->orWhereHas('plan', function ($q) {
+                    $q->where('name', 'like', "%{$this->search}%");
+                });
+            })
+            ->when($this->status, function ($query) {
+                $query->where('status', $this->status);
+            })
+            ->orderBy($this->sortField, $this->sortDirection)
+            ->paginate($this->perPage);
     }
-};
+    
+    #[Computed]
+    public function stats(): array
+    {
+        return [
+            'total' => Subscription::count(),
+            'active' => Subscription::where('status', 'active')->count(),
+            'trial' => Subscription::whereNotNull('trial_ends_at')
+                ->where('trial_ends_at', '>', now())
+                ->count(),
+            'cancelled' => Subscription::whereNotNull('cancelled_at')->count(),
+        ];
+    }
+    
+    public function sort(string $field): void
+    {
+        if ($this->sortField === $field) {
+            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            $this->sortField = $field;
+            $this->sortDirection = 'asc';
+        }
+    }
+}
 
 ?>
 

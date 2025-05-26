@@ -1,72 +1,80 @@
 <?php
 
-use function Livewire\Volt\{state, mount, computed};
+use Livewire\Volt\Component;
+use Livewire\Attributes\Computed;
 use Illuminate\Support\Facades\Auth;
 use App\Models\AccessRequest;
 use App\Models\UrlList;
 use App\Notifications\AccessRequestNotification;
 
-state([
-    'urlList' => null,
-    'message' => '',
-    'showRequestForm' => false,
-]);
+new class extends Component {
+    public $urlList = null;
+    public $message = '';
+    public $showRequestForm = false;
 
-mount(function (UrlList $urlList) {
-    $this->urlList = $urlList;
-});
-
-$toggleRequestForm = function () {
-    $this->showRequestForm = !$this->showRequestForm;
-};
-
-$submitRequest = function () {
-    $this->validate([
-        'message' => 'nullable|string|max:1000',
-    ]);
-    
-    if ($this->urlList->hasPendingAccessRequest(Auth::id())) {
-        $this->dispatch('swal:toast', [
-            'type' => 'error',
-            'title' => 'You already have a pending request for this list.'
-        ]);
-        return;
+    public function mount(UrlList $urlList) 
+    {
+        $this->urlList = $urlList;
     }
-    
-    if ($this->urlList->isCollaborator(Auth::id())) {
-        $this->dispatch('swal:toast', [
-            'type' => 'error',
-            'title' => 'You are already a collaborator on this list.'
-        ]);
-        return;
+
+    public function toggleRequestForm() 
+    {
+        $this->showRequestForm = !$this->showRequestForm;
     }
-    
-    $accessRequest = AccessRequest::create([
-        'url_list_id' => $this->urlList->id,
-        'requester_id' => Auth::id(),
-        'message' => $this->message,
-        'status' => 'pending',
-    ]);
-    
-    $this->urlList->user->notify(new AccessRequestNotification($accessRequest));
-    
-    $this->message = '';
-    $this->showRequestForm = false;
-    
-    $this->dispatch('access-requested');
-    $this->dispatch('swal:toast', [
-        'type' => 'success',
-        'title' => 'Access request submitted successfully.'
-    ]);
+
+    public function submitRequest() 
+    {
+        $this->validate([
+            'message' => 'nullable|string|max:1000',
+        ]);
+        
+        if ($this->urlList->hasPendingAccessRequest(Auth::id())) {
+            $this->dispatch('swal:toast', [
+                'type' => 'error',
+                'title' => 'You already have a pending request for this list.'
+            ]);
+            return;
+        }
+        
+        if ($this->urlList->isCollaborator(Auth::id())) {
+            $this->dispatch('swal:toast', [
+                'type' => 'error',
+                'title' => 'You are already a collaborator on this list.'
+            ]);
+            return;
+        }
+        
+        $accessRequest = AccessRequest::create([
+            'url_list_id' => $this->urlList->id,
+            'requester_id' => Auth::id(),
+            'message' => $this->message,
+            'status' => 'pending',
+        ]);
+        
+        $this->urlList->user->notify(new AccessRequestNotification($accessRequest));
+        
+        $this->message = '';
+        $this->showRequestForm = false;
+        
+        $this->dispatch('access-requested');
+        $this->dispatch('swal:toast', [
+            'type' => 'success',
+            'title' => 'Access request submitted successfully.'
+        ]);
+    }
+
+    #[Computed]
+    public function hasPendingRequest() 
+    {
+        return $this->urlList->hasPendingAccessRequest(Auth::id());
+    }
+
+    #[Computed]
+    public function isCollaborator() 
+    {
+        return $this->urlList->isCollaborator(Auth::id());
+    }
 };
-
-$hasPendingRequest = computed(function () {
-    return $this->urlList->hasPendingAccessRequest(Auth::id());
-});
-
-$isCollaborator = computed(function () {
-    return $this->urlList->isCollaborator(Auth::id());
-});
 
 ?>
 
@@ -83,7 +91,7 @@ $isCollaborator = computed(function () {
         </div>
     @endif
     
-    @if (!$isCollaborator && !$hasPendingRequest)
+    @if (!$this->isCollaborator && !$this->hasPendingRequest)
         @if ($showRequestForm)
             <div class="mt-4 bg-white p-4 rounded-lg shadow-md dark:bg-gray-800">
                 <h3 class="text-lg font-semibold mb-2">Request Edit Access</h3>
@@ -114,11 +122,11 @@ $isCollaborator = computed(function () {
                 Request Edit Access
             </button>
         @endif
-    @elseif ($hasPendingRequest)
+    @elseif ($this->hasPendingRequest)
         <div class="mt-2 py-2 px-4 bg-yellow-100 text-yellow-800 rounded-md inline-block dark:bg-yellow-200">
             <span class="font-medium">Pending:</span> Your access request is awaiting approval
         </div>
-    @elseif ($isCollaborator)
+    @elseif ($this->isCollaborator)
         <div class="mt-2 py-2 px-4 bg-green-100 text-green-800 rounded-md inline-block dark:bg-green-200">
             <span class="font-medium">Access Granted:</span> You can edit this list
         </div>

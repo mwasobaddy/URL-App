@@ -1,33 +1,38 @@
 <?php
 
-use function Livewire\Volt\{state, mount, computed};
+use Livewire\Volt\Component;
 use App\Models\Plan;
 
-state([
-    'plan' => null,
-    'selectedVersion' => null,
-]);
+new class extends Component {
+    public $plan = null;
+    public $selectedVersion = null;
 
-mount(function (Plan $plan) {
-    $this->plan = $plan;
-    $this->selectedVersion = $plan->getCurrentVersion();
-});
+    public function mount(Plan $plan) 
+    {
+        $this->plan = $plan;
+        $this->selectedVersion = $plan->getCurrentVersion();
+    }
 
-$changeVersion = function ($versionId) {
-    $this->selectedVersion = $this->plan->versions()->findOrFail($versionId);
-};
+    public function changeVersion($versionId)
+    {
+        $this->selectedVersion = $this->plan->versions()->findOrFail($versionId);
+    }
 
-$versions = computed(function () {
-    return $this->plan->versions()->orderByDesc('created_at')->get();
-});
+    public function versionsComputed()
+    {
+        return $this->plan->versions()->orderByDesc('created_at')->get();
+    }
 
-$subscriptionCount = computed(function () {
-    return $this->plan->subscriptions()->count();
-});
+    public function subscriptionCountComputed()
+    {
+        return $this->plan->subscriptions()->count();
+    }
 
-$activeSubscriptionCount = computed(function () {
-    return $this->plan->subscriptions()->where('status', 'active')->count();
-});
+    public function activeSubscriptionCountComputed()
+    {
+        return $this->plan->subscriptions()->where('status', 'active')->count();
+    }
+}
 
 ?>
 
@@ -61,14 +66,14 @@ $activeSubscriptionCount = computed(function () {
     <div class="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
         <flux:stat-card
             title="Total Subscriptions"
-            :value="$subscriptionCount"
+            :value="$this->subscriptionCount"
             icon="users"
             trend="none"
         />
 
         <flux:stat-card
             title="Active Subscriptions"
-            :value="$activeSubscriptionCount"
+            :value="$this->activeSubscriptionCount"
             icon="check-circle"
             type="success"
             trend="none"
@@ -76,7 +81,7 @@ $activeSubscriptionCount = computed(function () {
         
         <flux:stat-card
             title="Total Versions"
-            :value="$versions->count()"
+            :value="$this->versions->count()"
             icon="document-duplicate"
             type="info"
             trend="none"
@@ -84,7 +89,7 @@ $activeSubscriptionCount = computed(function () {
         
         <flux:stat-card
             title="Monthly Revenue"
-            :value="'$' . number_format($activeSubscriptionCount * $plan->monthly_price, 2)"
+            :value="'$' . number_format($this->activeSubscriptionCount * $plan->monthly_price, 2)"
             icon="currency-dollar"
             type="warning"
             trend="none"
@@ -107,7 +112,7 @@ $activeSubscriptionCount = computed(function () {
                             wire:change="changeVersion($event.target.value)"
                             class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm rounded-md dark:bg-zinc-800 dark:border-zinc-700"
                         >
-                            @foreach($versions as $version)
+                            @foreach($this->versions as $version)
                                 <option value="{{ $version->id }}">
                                     v{{ $version->version }} {{ $version->is_active ? '(Active)' : '' }}
                                 </option>
@@ -225,7 +230,7 @@ $activeSubscriptionCount = computed(function () {
         <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Version History</h3>
         <div class="bg-white dark:bg-zinc-800 shadow-sm rounded-lg">
             <ul class="divide-y divide-gray-200 dark:divide-zinc-700">
-                @foreach($versions as $version)
+                @foreach($this->versions as $version)
                     <li class="px-4 py-4">
                         <div class="flex items-center justify-between">
                             <div>

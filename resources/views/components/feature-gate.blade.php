@@ -1,28 +1,39 @@
 <?php
 
-use function Livewire\Volt\{state, computed};
+use Livewire\Volt\Component;
+use Livewire\Attributes\Computed;
 use App\Services\RoleCheckService;
 
-state([
-    'feature' => '',
-    'requiredRole' => '',
-    'showUpgradePrompt' => true,
-]);
-
-$roleService = new RoleCheckService();
-
-$hasAccess = computed(function () use ($roleService) {
-    return $roleService->hasRole($this->requiredRole) || $roleService->hasPermission("access.{$this->feature}");
-});
-
-$currentRole = computed(function () use ($roleService) {
-    return $roleService->getHighestRole();
-});
-
+new class extends Component
+{
+    public string $feature = '';
+    public string $requiredRole = '';
+    public bool $showUpgradePrompt = true;
+    
+    private RoleCheckService $roleService;
+    
+    public function mount()
+    {
+        $this->roleService = new RoleCheckService();
+    }
+    
+    #[Computed]
+    public function hasAccess()
+    {
+        return $this->roleService->hasRole($this->requiredRole) || 
+               $this->roleService->hasPermission("access.{$this->feature}");
+    }
+    
+    #[Computed]
+    public function currentRole()
+    {
+        return $this->roleService->getHighestRole();
+    }
+}
 ?>
 
 <div>
-    @if($hasAccess)
+    @if($this->hasAccess)
         {{ $slot }}
     @else
         <div class="relative">
@@ -38,12 +49,12 @@ $currentRole = computed(function () use ($roleService) {
                         </h3>
                         <p class="text-sm text-gray-600 dark:text-gray-300 mb-4">
                             This feature requires {{ ucfirst($requiredRole) }} access.
-                            @if($currentRole === 'free')
+                            @if($this->currentRole === 'free')
                                 Upgrade your plan to unlock this feature.
                             @endif
                         </p>
                         
-                        @if($currentRole === 'free')
+                        @if($this->currentRole === 'free')
                             <a href="{{ route('plans') }}" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500">
                                 View Plans
                             </a>

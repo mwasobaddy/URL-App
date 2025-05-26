@@ -25,16 +25,17 @@ There are two recommended ways to access services in Volt components:
 ```php
 <?php
 
-use function Livewire\Volt\{state};
+use Livewire\Volt\Component;
 use App\Services\SubscriptionService;
 
-state([
-    'subscription' => null,
-]);
-
-$mount = function (SubscriptionService $subscriptionService) {
-    $this->subscription = $subscriptionService->getCurrentSubscription();
-};
+new class extends Component {
+    public $subscription = null;
+    
+    public function mount(SubscriptionService $subscriptionService)
+    {
+        $this->subscription = $subscriptionService->getCurrentSubscription();
+    }
+}
 ?>
 
 <div>
@@ -43,6 +44,26 @@ $mount = function (SubscriptionService $subscriptionService) {
 ```
 
 #### 2. Using the `app()` Helper
+
+```php
+<?php
+
+use Livewire\Volt\Component;
+
+new class extends Component {
+    public $subscription = null;
+    
+    public function mount()
+    {
+        $this->subscription = app(\App\Services\SubscriptionService::class)->getCurrentSubscription();
+    }
+}
+?>
+
+<div>
+    <!-- Component markup -->
+</div>
+```
 
 ```php
 <?php

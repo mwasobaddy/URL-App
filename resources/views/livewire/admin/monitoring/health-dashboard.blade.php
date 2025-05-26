@@ -1,141 +1,149 @@
 <?php
 
-use function Livewire\Volt\{state, computed, mount};
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
 use Carbon\Carbon;
+use Livewire\Volt\Component;
 
-state([
-    'refreshInterval' => 30, // seconds
-    'systemMetrics' => [],
-    'queueMetrics' => [],
-    'cacheMetrics' => [],
-    'errorMetrics' => [],
-    'loading' => false,
-]);
+new class extends Component
+{
+    // State properties
+    public $refreshInterval = 30; // seconds
+    public $systemMetrics = [];
+    public $queueMetrics = [];
+    public $cacheMetrics = [];
+    public $errorMetrics = [];
+    public $loading = false;
 
-// Initialize monitoring
-$mount = function () {
-    $this->refreshMetrics();
-};
+    // Initialize monitoring
+    public function mount()
+    {
+        $this->refreshMetrics();
+    }
 
-// Refresh all metrics
-$refreshMetrics = function () {
-    $this->loading = true;
-    
-    $this->systemMetrics = $this->getSystemMetrics();
-    $this->queueMetrics = $this->getQueueMetrics();
-    $this->cacheMetrics = $this->getCacheMetrics();
-    $this->errorMetrics = $this->getErrorMetrics();
-    
-    $this->loading = false;
-};
+    // Refresh all metrics
+    public function refreshMetrics()
+    {
+        $this->loading = true;
+        
+        $this->systemMetrics = $this->getSystemMetrics();
+        $this->queueMetrics = $this->getQueueMetrics();
+        $this->cacheMetrics = $this->getCacheMetrics();
+        $this->errorMetrics = $this->getErrorMetrics();
+        
+        $this->loading = false;
+    }
 
-// System metrics collection
-$getSystemMetrics = function () {
-    $load = sys_getloadavg();
-    $memory = memory_get_usage(true);
-    $disk = disk_free_space('/');
-    
-    return [
-        'cpu_load' => [
-            '1m' => round($load[0], 2),
-            '5m' => round($load[1], 2),
-            '15m' => round($load[2], 2),
-        ],
-        'memory_usage' => [
-            'used' => round($memory / 1024 / 1024, 2), // MB
-            'limit' => ini_get('memory_limit'),
-        ],
-        'disk_space' => [
-            'free' => round($disk / 1024 / 1024 / 1024, 2), // GB
-            'total' => round(disk_total_space('/') / 1024 / 1024 / 1024, 2), // GB
-        ],
-        'php_version' => PHP_VERSION,
-        'laravel_version' => app()->version(),
-        'server_time' => now()->format('Y-m-d H:i:s'),
-    ];
-};
-
-// Queue metrics collection
-$getQueueMetrics = function () {
-    $defaultQueue = config('queue.default');
-    $queueSize = Queue::size('default');
-    
-    $failedJobs = DB::table('failed_jobs')
-        ->whereBetween('failed_at', [now()->subDay(), now()])
-        ->count();
-    
-    $processingJobs = Cache::get('processing_jobs', 0);
-    
-    return [
-        'driver' => $defaultQueue,
-        'pending_jobs' => $queueSize,
-        'failed_jobs_24h' => $failedJobs,
-        'processing_jobs' => $processingJobs,
-        'health_status' => $failedJobs > 50 ? 'critical' : ($failedJobs > 20 ? 'warning' : 'healthy'),
-    ];
-};
-
-// Cache metrics collection
-$getCacheMetrics = function () {
-    $driver = config('cache.default');
-    $hits = Cache::get('cache_hits', 0);
-    $misses = Cache::get('cache_misses', 0);
-    $ratio = $hits + $misses > 0 ? round(($hits / ($hits + $misses)) * 100, 2) : 0;
-    
-    return [
-        'driver' => $driver,
-        'hits' => $hits,
-        'misses' => $misses,
-        'hit_ratio' => $ratio,
-        'total_keys' => Cache::get('total_cache_keys', 0),
-        'health_status' => $ratio < 50 ? 'warning' : 'healthy',
-    ];
-};
-
-// Error metrics collection
-$getErrorMetrics = function () {
-    $today = now()->format('Y-m-d');
-    $logPath = storage_path("logs/laravel-{$today}.log");
-    
-    if (!file_exists($logPath)) {
+    // System metrics collection
+    public function getSystemMetrics()
+    {
+        $load = sys_getloadavg();
+        $memory = memory_get_usage(true);
+        $disk = disk_free_space('/');
+        
         return [
-            'error_count_24h' => 0,
-            'warning_count_24h' => 0,
-            'last_error' => null,
-            'health_status' => 'healthy',
+            'cpu_load' => [
+                '1m' => round($load[0], 2),
+                '5m' => round($load[1], 2),
+                '15m' => round($load[2], 2),
+            ],
+            'memory_usage' => [
+                'used' => round($memory / 1024 / 1024, 2), // MB
+                'limit' => ini_get('memory_limit'),
+            ],
+            'disk_space' => [
+                'free' => round($disk / 1024 / 1024 / 1024, 2), // GB
+                'total' => round(disk_total_space('/') / 1024 / 1024 / 1024, 2), // GB
+            ],
+            'php_version' => PHP_VERSION,
+            'laravel_version' => app()->version(),
+            'server_time' => now()->format('Y-m-d H:i:s'),
         ];
     }
-    
-    $errorCount = 0;
-    $warningCount = 0;
-    $lastError = null;
-    
-    // Read last 1000 lines of log file
-    $lines = array_slice(file($logPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES), -1000);
-    
-    foreach ($lines as $line) {
-        if (str_contains($line, '.ERROR')) {
-            $errorCount++;
-            if (!$lastError) {
-                $lastError = $line;
-            }
-        } elseif (str_contains($line, '.WARNING')) {
-            $warningCount++;
-        }
+
+    // Queue metrics collection
+    public function getQueueMetrics()
+    {
+        $defaultQueue = config('queue.default');
+        $queueSize = Queue::size('default');
+        
+        $failedJobs = DB::table('failed_jobs')
+            ->whereBetween('failed_at', [now()->subDay(), now()])
+            ->count();
+        
+        $processingJobs = Cache::get('processing_jobs', 0);
+        
+        return [
+            'driver' => $defaultQueue,
+            'pending_jobs' => $queueSize,
+            'failed_jobs_24h' => $failedJobs,
+            'processing_jobs' => $processingJobs,
+            'health_status' => $failedJobs > 50 ? 'critical' : ($failedJobs > 20 ? 'warning' : 'healthy'),
+        ];
     }
-    
-    return [
-        'error_count_24h' => $errorCount,
-        'warning_count_24h' => $warningCount,
-        'last_error' => $lastError,
-        'health_status' => $errorCount > 50 ? 'critical' : ($errorCount > 20 ? 'warning' : 'healthy'),
-    ];
-};
+
+    // Cache metrics collection
+    public function getCacheMetrics()
+    {
+        $driver = config('cache.default');
+        $hits = Cache::get('cache_hits', 0);
+        $misses = Cache::get('cache_misses', 0);
+        $ratio = $hits + $misses > 0 ? round(($hits / ($hits + $misses)) * 100, 2) : 0;
+        
+        return [
+            'driver' => $driver,
+            'hits' => $hits,
+            'misses' => $misses,
+            'hit_ratio' => $ratio,
+            'total_keys' => Cache::get('total_cache_keys', 0),
+            'health_status' => $ratio < 50 ? 'warning' : 'healthy',
+        ];
+    }
+
+    // Error metrics collection
+    public function getErrorMetrics()
+    {
+        $today = now()->format('Y-m-d');
+        $logPath = storage_path("logs/laravel-{$today}.log");
+        
+        if (!file_exists($logPath)) {
+            return [
+                'error_count_24h' => 0,
+                'warning_count_24h' => 0,
+                'last_error' => null,
+                'health_status' => 'healthy',
+            ];
+        }
+        
+        $errorCount = 0;
+        $warningCount = 0;
+        $lastError = null;
+        
+        // Read last 1000 lines of log file
+        $lines = array_slice(file($logPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES), -1000);
+        
+        foreach ($lines as $line) {
+            if (str_contains($line, '.ERROR')) {
+                $errorCount++;
+                if (!$lastError) {
+                    $lastError = $line;
+                }
+            } elseif (str_contains($line, '.WARNING')) {
+                $warningCount++;
+            }
+        }
+        
+        return [
+            'error_count_24h' => $errorCount,
+            'warning_count_24h' => $warningCount,
+            'last_error' => $lastError,
+            'health_status' => $errorCount > 50 ? 'critical' : ($errorCount > 20 ? 'warning' : 'healthy'),
+        ];
+    }
+}
 
 ?>
 

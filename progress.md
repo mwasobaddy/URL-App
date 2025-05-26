@@ -217,4 +217,51 @@ Tasks:
 
 ---
 
+## Volt Component Refactoring Progress
+
+### Main Livewire Components
+- [ ] subscription-activation.blade.php
+- [ ] publishedurllistscomponent.blade.php
+- [ ] url-list-dashboard.blade.php
+- [ ] notifications-dropdown.blade.php
+- [ ] url-list-share.blade.php
+- [ ] navigation-menu.blade.php
+- [ ] url-list-display.blade.php
+- [ ] request-list-access.blade.php
+- [ ] url-manager.blade.php
+- [ ] url-list-create.blade.php
+- [ ] manage-list-access.blade.php
+
+### Auth Components
+- [ ] auth/login.blade.php
+- [ ] auth/verify-email.blade.php
+- [ ] auth/forgot-password.blade.php
+- [ ] auth/confirm-password.blade.php
+- [ ] auth/register.blade.php
+- [ ] auth/reset-password.blade.php
+
+### Settings Components
+- [ ] settings/profile.blade.php
+- [ ] settings/appearance.blade.php
+- [ ] settings/notifications.blade.php
+- [ ] settings/password.blade.php
+
+### Admin Components
+- [ ] admin/users/roles.blade.php
+- [ ] admin/users/index.blade.php
+- [ ] admin/subscriptions/show.blade.php
+- [ ] admin/subscriptions/metrics-dashboard.blade.php
+- [ ] admin/subscriptions/index.blade.php
+- [ ] admin/revenue/export-reports.blade.php
+- [ ] admin/revenue/analytics-dashboard.blade.php
+- [ ] admin/monitoring/health-dashboard.blade.php
+- [ ] admin/plans/edit.blade.php
+- [ ] admin/plans/index.blade.php
+- [ ] admin/monitoring/activity-log.blade.php
+- [ ] admin/plans/show.blade.php
+- [ ] admin/plans/create.blade.php
+- [ ] admin/customers/subscription-overview.blade.php
+
+---
+
 This file will be updated as tasks are completed.

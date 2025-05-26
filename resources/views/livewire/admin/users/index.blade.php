@@ -1,112 +1,124 @@
 <?php
 
-use function Livewire\Volt\{state, computed, mount};
+use Livewire\Volt\Component;
+use Livewire\WithPagination;
+use Livewire\Attributes\Computed;
 use App\Models\User;
 use Spatie\Permission\Models\Role;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
-state([
-    'search' => '',
-    'role' => '',
-    'status' => '',
-    'perPage' => 10,
-    'sortField' => 'created_at',
-    'sortDirection' => 'desc',
-    'selectedUsers' => [],
-    'roles' => [],
-    'selectedRole' => null,
-    'showBulkRoleModal' => false
-]);
-
-mount(function () {
-    $this->roles = Role::all();
-});
-
-$users = computed(function (): LengthAwarePaginator {
-    return User::query()
-        ->with(['roles', 'subscription.plan'])
-        ->when($this->search, function ($query) {
-            $query->where(function ($q) {
-                $q->where('name', 'like', "%{$this->search}%")
-                    ->orWhere('email', 'like', "%{$this->search}%");
-            });
-        })
-        ->when($this->role, function ($query) {
-            $query->role($this->role);
-        })
-        ->when($this->status, function ($query) {
-            if ($this->status === 'subscribed') {
-                $query->whereHas('subscription', function ($q) {
-                    $q->where('status', 'active');
-                });
-            } elseif ($this->status === 'trial') {
-                $query->whereHas('subscription', function ($q) {
-                    $q->whereNotNull('trial_ends_at')
-                        ->where('trial_ends_at', '>', now());
-                });
-            } elseif ($this->status === 'expired') {
-                $query->whereHas('subscription', function ($q) {
-                    $q->where('status', '!=', 'active');
-                });
-            } elseif ($this->status === 'none') {
-                $query->doesntHave('subscription');
-            }
-        })
-        ->orderBy($this->sortField, $this->sortDirection)
-        ->paginate($this->perPage);
-});
-
-$stats = computed(function () {
-    return [
-        'total' => User::count(),
-        'subscribed' => User::whereHas('subscription', function ($query) {
-            $query->where('status', 'active');
-        })->count(),
-        'trial' => User::whereHas('subscription', function ($query) {
-            $query->whereNotNull('trial_ends_at')
-                ->where('trial_ends_at', '>', now());
-        })->count(),
-        'free' => User::doesntHave('subscription')->count(),
-    ];
-});
-
-$sort = function (string $field) {
-    if ($this->sortField === $field) {
-        $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
-    } else {
-        $this->sortField = $field;
-        $this->sortDirection = 'asc';
+new class extends Component {
+    use WithPagination;
+    
+    // Properties
+    public $search = '';
+    public $role = '';
+    public $status = '';
+    public $perPage = 10;
+    public $sortField = 'created_at';
+    public $sortDirection = 'desc';
+    public $selectedUsers = [];
+    public $roles = [];
+    public $selectedRole = null;
+    public $showBulkRoleModal = false;
+    
+    public function mount(): void
+    {
+        $this->roles = Role::all();
     }
-};
+    
+    #[Computed]
+    public function users(): LengthAwarePaginator
+    {
+        return User::query()
+            ->with(['roles', 'subscription.plan'])
+            ->when($this->search, function ($query) {
+                $query->where(function ($q) {
+                    $q->where('name', 'like', "%{$this->search}%")
+                        ->orWhere('email', 'like', "%{$this->search}%");
+                });
+            })
+            ->when($this->role, function ($query) {
+                $query->role($this->role);
+            })
+            ->when($this->status, function ($query) {
+                if ($this->status === 'subscribed') {
+                    $query->whereHas('subscription', function ($q) {
+                        $q->where('status', 'active');
+                    });
+                } elseif ($this->status === 'trial') {
+                    $query->whereHas('subscription', function ($q) {
+                        $q->whereNotNull('trial_ends_at')
+                            ->where('trial_ends_at', '>', now());
+                    });
+                } elseif ($this->status === 'expired') {
+                    $query->whereHas('subscription', function ($q) {
+                        $q->where('status', '!=', 'active');
+                    });
+                } elseif ($this->status === 'none') {
+                    $query->doesntHave('subscription');
+                }
+            })
+            ->orderBy($this->sortField, $this->sortDirection)
+            ->paginate($this->perPage);
+    }
+    
+    #[Computed]
+    public function stats(): array
+    {
+        return [
+            'total' => User::count(),
+            'subscribed' => User::whereHas('subscription', function ($query) {
+                $query->where('status', 'active');
+            })->count(),
+            'trial' => User::whereHas('subscription', function ($query) {
+                $query->whereNotNull('trial_ends_at')
+                    ->where('trial_ends_at', '>', now());
+            })->count(),
+            'free' => User::doesntHave('subscription')->count(),
+        ];
+    }
+    
+    public function sort(string $field): void
+    {
+        if ($this->sortField === $field) {
+            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            $this->sortField = $field;
+            $this->sortDirection = 'asc';
+        }
+    }
+    
+    public function toggleSelectAll(): void
+    {
+        if (count($this->selectedUsers) === $this->users->count()) {
+            $this->selectedUsers = [];
+        } else {
+            $this->selectedUsers = $this->users->pluck('id')->map(fn($id) => (string) $id)->toArray();
+        }
+    }
+    
+    public function updateUserRole(): void
+    {
+        if (!$this->selectedRole || empty($this->selectedUsers)) {
+            return;
+        }
 
-$toggleSelectAll = function () {
-    if (count($this->selectedUsers) === $this->users->count()) {
+        $role = Role::findById($this->selectedRole);
+        User::whereIn('id', $this->selectedUsers)->each(function ($user) use ($role) {
+            $user->syncRoles($role);
+        });
+
         $this->selectedUsers = [];
-    } else {
-        $this->selectedUsers = $this->users->pluck('id')->map(fn($id) => (string) $id)->toArray();
+        $this->selectedRole = null;
+        $this->showBulkRoleModal = false;
+
+        $this->dispatch('swal:toast', [
+            'type' => 'success',
+            'message' => 'User roles updated successfully.',
+        ]);
     }
 };
-
-$updateUserRole = function () {
-    if (!$this->selectedRole || empty($this->selectedUsers)) {
-        return;
-    }
-
-    $role = Role::findById($this->selectedRole);
-    User::whereIn('id', $this->selectedUsers)->each(function ($user) use ($role) {
-        $user->syncRoles($role);
-    });
-
-    $this->selectedUsers = [];
-    $this->selectedRole = null;
-    $this->showBulkRoleModal = false;
-
-    $this->dispatch('swal:toast', [
-        'type' => 'success',
-        'message' => 'User roles updated successfully.',
-    ]);
-};
-
 ?>
 
 <div>

@@ -1,46 +1,60 @@
 <?php
 
-use function Livewire\Volt\{state, computed, mount};
 use App\Models\Plan;
 use App\Services\SubscriptionService;
 use App\Services\UsageTrackingService;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
+use Livewire\Volt\Component;
 
-#[Layout('layouts.app')]
-#[Title('Subscription Dashboard')]
+new #[Layout('layouts.app')] #[Title('Subscription Dashboard')] class extends Component
+{
+    public $subscription = null;
+    public $usage = [];
+    public $error = null;
 
-state([
-    'subscription' => null,
-    'usage' => [],
-    'error' => null,
-]);
+    public function mount(SubscriptionService $subscriptionService, UsageTrackingService $usageTrackingService)
+    {
+        $user = auth()->user();
+        $state = $subscriptionService->getSubscriptionState($user);
+        $this->subscription = $state;
+        $this->usage = $usageTrackingService->getTotalUsage($user);
+    }
 
-mount(function (SubscriptionService $subscriptionService, UsageTrackingService $usageTrackingService) {
-    $user = auth()->user();
-    $state = $subscriptionService->getSubscriptionState($user);
-    $this->subscription = $state;
-    $this->usage = $usageTrackingService->getTotalUsage($user);
-});
+    public function getFeatureLimit(string $feature)
+    {
+        $subscriptionService = app(SubscriptionService::class);
+        $limits = $subscriptionService->getFeatureLimits(auth()->user());
+        return $limits[$feature] ?? 0;
+    }
 
-$getFeatureLimit = function (string $feature) use ($subscriptionService) {
-    $limits = $subscriptionService->getFeatureLimits(auth()->user());
-    return $limits[$feature] ?? 0;
-};
+    public function getRemainingQuota(string $feature)
+    {
+        $subscriptionService = app(SubscriptionService::class);
+        $currentUsage = $this->usage[$feature] ?? 0;
+        return $subscriptionService->getRemainingQuota(auth()->user(), $feature, $currentUsage);
+    }
 
-$getRemainingQuota = function (string $feature) use ($subscriptionService) {
-    $currentUsage = $this->usage[$feature] ?? 0;
-    return $subscriptionService->getRemainingQuota(auth()->user(), $feature, $currentUsage);
-};
-
-$getUsagePercentage = function (string $feature) {
-    $limit = $this->getFeatureLimit($feature);
-    if ($limit === -1) return 0;
-    if ($limit === 0) return 100;
+    public function getUsagePercentage(string $feature)
+    {
+        $limit = $this->getFeatureLimit($feature);
+        if ($limit === -1) return 0;
+        if ($limit === 0) return 100;
+        
+        $currentUsage = $this->usage[$feature] ?? 0;
+        return min(100, ($currentUsage / $limit) * 100);
+    }
     
-    $currentUsage = $this->usage[$feature] ?? 0;
-    return min(100, ($currentUsage / $limit) * 100);
-};
+    public function resumeSubscription()
+    {
+        // Implementation for resume subscription
+    }
+    
+    public function cancelSubscription()
+    {
+        // Implementation for cancel subscription
+    }
+}
 
 ?>
 
@@ -95,11 +109,11 @@ $getUsagePercentage = function (string $feature) {
                         <div class="mt-2">
                             <div class="flex justify-between text-sm text-emerald-700 dark:text-emerald-300">
                                 <span>{{ $usage['lists'] ?? 0 }} used</span>
-                                <span>{{ $getFeatureLimit('lists') === -1 ? 'Unlimited' : $getFeatureLimit('lists') . ' total' }}</span>
+                                <span>{{ $this->getFeatureLimit('lists') === -1 ? 'Unlimited' : $this->getFeatureLimit('lists') . ' total' }}</span>
                             </div>
                             <div class="mt-2 relative">
                                 <div class="overflow-hidden h-2 text-xs flex rounded bg-emerald-200 dark:bg-emerald-900/50">
-                                    <div style="width: {{ $getUsagePercentage('lists') }}%" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-emerald-500">
+                                    <div style="width: {{ $this->getUsagePercentage('lists') }}%" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-emerald-500">
                                     </div>
                                 </div>
                             </div>
@@ -112,11 +126,11 @@ $getUsagePercentage = function (string $feature) {
                         <div class="mt-2">
                             <div class="flex justify-between text-sm text-emerald-700 dark:text-emerald-300">
                                 <span>{{ $usage['urls_per_list'] ?? 0 }} used</span>
-                                <span>{{ $getFeatureLimit('urls_per_list') === -1 ? 'Unlimited' : $getFeatureLimit('urls_per_list') . ' total' }}</span>
+                                <span>{{ $this->getFeatureLimit('urls_per_list') === -1 ? 'Unlimited' : $this->getFeatureLimit('urls_per_list') . ' total' }}</span>
                             </div>
                             <div class="mt-2 relative">
                                 <div class="overflow-hidden h-2 text-xs flex rounded bg-emerald-200 dark:bg-emerald-900/50">
-                                    <div style="width: {{ $getUsagePercentage('urls_per_list') }}%" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-emerald-500">
+                                    <div style="width: {{ $this->getUsagePercentage('urls_per_list') }}%" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-emerald-500">
                                     </div>
                                 </div>
                             </div>
@@ -129,11 +143,11 @@ $getUsagePercentage = function (string $feature) {
                         <div class="mt-2">
                             <div class="flex justify-between text-sm text-emerald-700 dark:text-emerald-300">
                                 <span>{{ $usage['collaborators'] ?? 0 }} used</span>
-                                <span>{{ $getFeatureLimit('collaborators') === -1 ? 'Unlimited' : $getFeatureLimit('collaborators') . ' total' }}</span>
+                                <span>{{ $this->getFeatureLimit('collaborators') === -1 ? 'Unlimited' : $this->getFeatureLimit('collaborators') . ' total' }}</span>
                             </div>
                             <div class="mt-2 relative">
                                 <div class="overflow-hidden h-2 text-xs flex rounded bg-emerald-200 dark:bg-emerald-900/50">
-                                    <div style="width: {{ $getUsagePercentage('collaborators') }}%" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-emerald-500">
+                                    <div style="width: {{ $this->getUsagePercentage('collaborators') }}%" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-emerald-500">
                                     </div>
                                 </div>
                             </div>

@@ -1,149 +1,150 @@
 <?php
 
-use function Livewire\Volt\{state, computed, mount};
+use Livewire\Volt\Component;
 use App\Models\Subscription;
 use App\Models\Plan;
 use App\Models\PlanVersion;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Livewire\Attributes\Computed;
 
-state([
-    'dateRange' => '30', // days
-    'period' => 'daily', // daily, weekly, monthly
-    'loading' => false,
-    'exportFormat' => 'csv',
-    'planFilter' => 'all'
-]);
-
-$getRevenueMetrics = function() {
-    $endDate = now();
-    $startDate = now()->subDays($this->dateRange);
+new class extends Component {
+    public $dateRange = '30'; // days
+    public $period = 'daily'; // daily, weekly, monthly
+    public $loading = false;
+    public $exportFormat = 'csv';
+    public $planFilter = 'all';
     
-    // Base query for all subscription payments
-    $query = Subscription::query()
-        ->with(['plan', 'planVersion'])
-        ->where('status', 'active')
-        ->whereBetween('created_at', [$startDate, $endDate]);
+    public function getRevenueMetrics() {
+        $endDate = now();
+        $startDate = now()->subDays($this->dateRange);
+        
+        // Base query for all subscription payments
+        $query = Subscription::query()
+            ->with(['plan', 'planVersion'])
+            ->where('status', 'active')
+            ->whereBetween('created_at', [$startDate, $endDate]);
 
-    // Revenue by plan type
-    $revenueByPlan = $query->get()
-        ->groupBy('plan.name')
-        ->map(function ($subscriptions, $planName) {
-            return [
-                'plan' => $planName,
-                'revenue' => $subscriptions->sum(function ($subscription) {
-                    return $subscription->interval === 'yearly'
-                        ? $subscription->planVersion->yearly_price
-                        : $subscription->planVersion->monthly_price;
-                }),
-                'count' => $subscriptions->count()
-            ];
+        // Revenue by plan type
+        $revenueByPlan = $query->get()
+            ->groupBy('plan.name')
+            ->map(function ($subscriptions, $planName) {
+                return [
+                    'plan' => $planName,
+                    'revenue' => $subscriptions->sum(function ($subscription) {
+                        return $subscription->interval === 'yearly'
+                            ? $subscription->planVersion->yearly_price
+                            : $subscription->planVersion->monthly_price;
+                    }),
+                    'count' => $subscriptions->count()
+                ];
+            });
+
+        // Revenue by period
+        $periodQuery = match($this->period) {
+            'weekly' => DB::raw('YEARWEEK(created_at) as period'),
+            'monthly' => DB::raw('DATE_FORMAT(created_at, "%Y-%m") as period'),
+            default => DB::raw('DATE(created_at) as period'), // daily
+        };
+
+        $revenueByPeriod = $query->select(
+                $periodQuery,
+                DB::raw('COUNT(*) as subscriptions'),
+                DB::raw('SUM(CASE 
+                    WHEN interval = "yearly" THEN plan_versions.yearly_price
+                    ELSE plan_versions.monthly_price 
+                    END) as revenue')
+            )
+            ->join('plan_versions', 'subscriptions.plan_version_id', '=', 'plan_versions.id')
+            ->groupBy('period')
+            ->orderBy('period')
+            ->get();
+
+        // Payment success/failure rates
+        $totalPayments = $query->count();
+        $failedPayments = $query->where('status', 'payment_failed')->count();
+        $successRate = $totalPayments > 0 ? (($totalPayments - $failedPayments) / $totalPayments) * 100 : 0;
+
+        // Refund tracking
+        $refunds = $query->where('status', 'refunded')->get();
+        $refundAmount = $refunds->sum(function ($subscription) {
+            return $subscription->interval === 'yearly'
+                ? $subscription->planVersion->yearly_price
+                : $subscription->planVersion->monthly_price;
         });
 
-    // Revenue by period
-    $periodQuery = match($this->period) {
-        'weekly' => DB::raw('YEARWEEK(created_at) as period'),
-        'monthly' => DB::raw('DATE_FORMAT(created_at, "%Y-%m") as period'),
-        default => DB::raw('DATE(created_at) as period'), // daily
-    };
+        return [
+            'revenue_by_plan' => $revenueByPlan,
+            'revenue_by_period' => $revenueByPeriod,
+            'total_revenue' => $revenueByPlan->sum('revenue'),
+            'total_subscriptions' => $revenueByPlan->sum('count'),
+            'payment_success_rate' => round($successRate, 2),
+            'failed_payments' => $failedPayments,
+            'refund_amount' => round($refundAmount, 2),
+            'refund_count' => $refunds->count(),
+        ];
+    }
 
-    $revenueByPeriod = $query->select(
-            $periodQuery,
-            DB::raw('COUNT(*) as subscriptions'),
-            DB::raw('SUM(CASE 
-                WHEN interval = "yearly" THEN plan_versions.yearly_price
-                ELSE plan_versions.monthly_price 
-                END) as revenue')
-        )
-        ->join('plan_versions', 'subscriptions.plan_version_id', '=', 'plan_versions.id')
-        ->groupBy('period')
-        ->orderBy('period')
-        ->get();
+    #[Computed]
+    public function metrics() {
+        return $this->getRevenueMetrics();
+    }
 
-    // Payment success/failure rates
-    $totalPayments = $query->count();
-    $failedPayments = $query->where('status', 'payment_failed')->count();
-    $successRate = $totalPayments > 0 ? (($totalPayments - $failedPayments) / $totalPayments) * 100 : 0;
+    public function updateDateRange($days) {
+        $this->dateRange = $days;
+    }
 
-    // Refund tracking
-    $refunds = $query->where('status', 'refunded')->get();
-    $refundAmount = $refunds->sum(function ($subscription) {
-        return $subscription->interval === 'yearly'
-            ? $subscription->planVersion->yearly_price
-            : $subscription->planVersion->monthly_price;
-    });
+    public function updatePeriod($period) {
+        $this->period = $period;
+    }
 
-    return [
-        'revenue_by_plan' => $revenueByPlan,
-        'revenue_by_period' => $revenueByPeriod,
-        'total_revenue' => $revenueByPlan->sum('revenue'),
-        'total_subscriptions' => $revenueByPlan->sum('count'),
-        'payment_success_rate' => round($successRate, 2),
-        'failed_payments' => $failedPayments,
-        'refund_amount' => round($refundAmount, 2),
-        'refund_count' => $refunds->count(),
-    ];
-};
-
-$metrics = computed(function () {
-    return $this->getRevenueMetrics();
-});
-
-$updateDateRange = function ($days) {
-    $this->dateRange = $days;
-};
-
-$updatePeriod = function ($period) {
-    $this->period = $period;
-};
-
-$exportReport = function () {
-    $this->loading = true;
-    
-    try {
-        $metrics = $this->metrics;
-        $filename = 'revenue-report-' . now()->format('Y-m-d') . '.' . $this->exportFormat;
+    public function exportReport() {
+        $this->loading = true;
         
-        if ($this->exportFormat === 'csv') {
-            $headers = [
-                'Content-Type' => 'text/csv',
-                'Content-Disposition' => 'attachment; filename="' . $filename . '"'
-            ];
+        try {
+            $metrics = $this->metrics;
+            $filename = 'revenue-report-' . now()->format('Y-m-d') . '.' . $this->exportFormat;
             
-            $callback = function() use ($metrics) {
-                $file = fopen('php://output', 'w');
+            if ($this->exportFormat === 'csv') {
+                $headers = [
+                    'Content-Type' => 'text/csv',
+                    'Content-Disposition' => 'attachment; filename="' . $filename . '"'
+                ];
                 
-                // Revenue by Plan
-                fputcsv($file, ['Revenue by Plan']);
-                fputcsv($file, ['Plan', 'Revenue', 'Subscriptions']);
-                foreach ($metrics['revenue_by_plan'] as $plan) {
-                    fputcsv($file, [$plan['plan'], $plan['revenue'], $plan['count']]);
-                }
+                $callback = function() use ($metrics) {
+                    $file = fopen('php://output', 'w');
+                    
+                    // Revenue by Plan
+                    fputcsv($file, ['Revenue by Plan']);
+                    fputcsv($file, ['Plan', 'Revenue', 'Subscriptions']);
+                    foreach ($metrics['revenue_by_plan'] as $plan) {
+                        fputcsv($file, [$plan['plan'], $plan['revenue'], $plan['count']]);
+                    }
+                    
+                    fputcsv($file, []); // Empty line
+                    
+                    // Revenue by Period
+                    fputcsv($file, ['Revenue by Period']);
+                    fputcsv($file, ['Period', 'Revenue', 'Subscriptions']);
+                    foreach ($metrics['revenue_by_period'] as $period) {
+                        fputcsv($file, [$period->period, $period->revenue, $period->subscriptions]);
+                    }
+                    
+                    fclose($file);
+                };
                 
-                fputcsv($file, []); // Empty line
-                
-                // Revenue by Period
-                fputcsv($file, ['Revenue by Period']);
-                fputcsv($file, ['Period', 'Revenue', 'Subscriptions']);
-                foreach ($metrics['revenue_by_period'] as $period) {
-                    fputcsv($file, [$period->period, $period->revenue, $period->subscriptions]);
-                }
-                
-                fclose($file);
-            };
+                return response()->stream($callback, 200, $headers);
+            }
             
-            return response()->stream($callback, 200, $headers);
+            // Add support for other export formats here
+            
+        } catch (\Exception $e) {
+            $this->addError('export', 'Failed to export report. Please try again.');
         }
         
-        // Add support for other export formats here
-        
-    } catch (\Exception $e) {
-        $this->addError('export', 'Failed to export report. Please try again.');
+        $this->loading = false;
     }
-    
-    $this->loading = false;
-};
-
+}
 ?>
 
 <div>

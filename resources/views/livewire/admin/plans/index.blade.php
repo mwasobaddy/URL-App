@@ -1,56 +1,67 @@
 <?php
 
-use function Livewire\Volt\{state, computed};
+use Livewire\Attributes\Computed;
+use Livewire\Volt\Component;
 use App\Models\Plan;
 
-state([
-    'search' => '',
-    'perPage' => 10,
-    'sortField' => 'created_at',
-    'sortDirection' => 'desc',
-    'showDeleteModal' => false,
-    'planToDelete' => null,
-]);
+new class extends Component {
+    // Properties
+    public string $search = '';
+    public int $perPage = 10;
+    public string $sortField = 'created_at';
+    public string $sortDirection = 'desc';
+    public bool $showDeleteModal = false;
+    public ?Plan $planToDelete = null;
 
-$sort = function ($field) {
-    if ($this->sortField === $field) {
-        $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
-    } else {
-        $this->sortField = $field;
-        $this->sortDirection = 'asc';
+    // Methods
+    public function sort($field)
+    {
+        if ($this->sortField === $field) {
+            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            $this->sortField = $field;
+            $this->sortDirection = 'asc';
+        }
+    }
+
+    public function confirmDelete(Plan $plan)
+    {
+        $this->planToDelete = $plan;
+        $this->showDeleteModal = true;
+    }
+
+    public function deletePlan()
+    {
+        $this->planToDelete->delete();
+        $this->planToDelete = null;
+        $this->showDeleteModal = false;
+        $this->dispatch('swal:toast', [
+            'type' => 'success',
+            'message' => 'Plan deleted successfully.',
+        ]);
+    }
+
+    // Computed properties
+    #[Computed]
+    public function plans()
+    {
+        return Plan::query()
+            ->when($this->search, fn($query) => $query->where('name', 'like', "%{$this->search}%"))
+            ->orderBy($this->sortField, $this->sortDirection)
+            ->paginate($this->perPage);
+    }
+
+    #[Computed]
+    public function stats()
+    {
+        return [
+            'total' => Plan::count(),
+            'active' => Plan::where('is_active', true)->count(),
+            'featured' => Plan::where('is_featured', true)->count(),
+            'archived' => Plan::onlyTrashed()->count(),
+        ];
     }
 };
-
-$confirmDelete = function (Plan $plan) {
-    $this->planToDelete = $plan;
-    $this->showDeleteModal = true;
-};
-
-$deletePlan = function () {
-    $this->planToDelete->delete();
-    $this->planToDelete = null;
-    $this->showDeleteModal = false;
-    $this->dispatch('swal:toast', [
-        'type' => 'success',
-        'message' => 'Plan deleted successfully.',
-    ]);
-};
-
-$plans = computed(function () {
-    return Plan::query()
-        ->when($this->search, fn($query) => $query->where('name', 'like', "%{$this->search}%"))
-        ->orderBy($this->sortField, $this->sortDirection)
-        ->paginate($this->perPage);
-});
-
-$stats = computed(function () {
-    return [
-        'total' => Plan::count(),
-        'active' => Plan::where('is_active', true)->count(),
-        'featured' => Plan::where('is_featured', true)->count(),
-        'archived' => Plan::onlyTrashed()->count(),
-    ];
-});
 
 ?>
 

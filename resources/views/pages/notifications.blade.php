@@ -1,26 +1,31 @@
 <?php
 
-use function Livewire\Volt\{state, uses};
 use Illuminate\Support\Facades\Auth;
 use Livewire\WithPagination;
+use Livewire\Volt\Component;
 
-uses(WithPagination::class);
-
-state(['unreadCount' => 0]);
-
-$getNotificationsProperty = function () {
-    return Auth::user()->notifications()->latest()->paginate(10);
-};
-
-$markAsRead = function ($notificationId) {
-    $notification = Auth::user()->notifications()->findOrFail($notificationId);
-    $notification->markAsRead();
-    $this->unreadCount = Auth::user()->unreadNotifications()->count();
-};
-
-$markAllAsRead = function () {
-    Auth::user()->unreadNotifications->markAsRead();
-    $this->unreadCount = 0;
+new class extends Component {
+    use WithPagination;
+    
+    public $unreadCount = 0;
+    
+    public function getNotificationsProperty()
+    {
+        return Auth::user()->notifications()->latest()->paginate(10);
+    }
+    
+    public function markAsRead($notificationId)
+    {
+        $notification = Auth::user()->notifications()->findOrFail($notificationId);
+        $notification->markAsRead();
+        $this->unreadCount = Auth::user()->unreadNotifications()->count();
+    }
+    
+    public function markAllAsRead()
+    {
+        Auth::user()->unreadNotifications->markAsRead();
+        $this->unreadCount = 0;
+    }
 }; ?>
 
 <!-- Main container with glass morphism effect -->
