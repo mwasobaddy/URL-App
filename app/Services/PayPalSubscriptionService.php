@@ -211,6 +211,42 @@ class PayPalSubscriptionService
 
     public function handleWebhook(array $payload): void
     {
-        $this->paypalApi->handleWebhook($payload);
+        // Extract subscription ID and event type
+        $subscriptionId = $payload['resource']['id'] ?? null;
+        $eventType = $payload['event_type'] ?? null;
+        
+        if (!$subscriptionId || !$eventType) {
+            return;
+        }
+        
+        // Find the subscription
+        $subscription = Subscription::where('paypal_subscription_id', $subscriptionId)->first();
+        if (!$subscription) {
+            return;
+        }
+        
+        switch ($eventType) {
+            case 'BILLING.SUBSCRIPTION.RENEWED':
+                // Update subscription renewal dates
+                $subscription->update([
+                    'current_period_starts_at' => now(),
+                    'current_period_ends_at' => $subscription->interval === 'yearly' 
+                        ? now()->addYear() 
+                        : now()->addMonth()
+                ]);
+                
+                // Send renewal completed notification
+                $this->subscriptionService->sendRenewalCompletedNotification($subscription);
+                break;
+                
+            case 'BILLING.SUBSCRIPTION.CANCELLED':
+                $subscription->cancel();
+                break;
+                
+            case 'BILLING.SUBSCRIPTION.PAYMENT.FAILED':
+                // Update subscription status
+                $subscription->update(['status' => 'payment_failed']);
+                break;
+        }
     }
 }

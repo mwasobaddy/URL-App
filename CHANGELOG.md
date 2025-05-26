@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.1] - 2025-05-27
+
+### Added
+- Subscription renewal notification system
+  - Created SubscriptionRenewalNotification for upcoming and completed renewals
+  - Added daily scheduled task for checking upcoming renewals
+  - Implemented notification preferences in user settings
+  - Added PayPal webhook integration for renewal events
+  - 7-day and 1-day renewal reminders
+  - Email and in-app notifications support
+  - Notification preference controls in settings
+
 ## [1.2.0] - 2025-05-27
 
 ### Added

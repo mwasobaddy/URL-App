@@ -225,4 +225,56 @@ class SubscriptionService
         
         return now()->diffInDays($subscription->ends_at, false);
     }
+    
+    /**
+     * Send an upcoming renewal notification for a subscription
+     */
+    public function sendUpcomingRenewalNotification(Subscription $subscription): void
+    {
+        if (!$subscription->isActive()) {
+            return;
+        }
+
+        $daysUntilRenewal = now()->diffInDays($subscription->current_period_ends_at);
+        
+        // Send notifications 7 days and 1 day before renewal
+        if (in_array($daysUntilRenewal, [7, 1])) {
+            $subscription->user->notify(new \App\Notifications\SubscriptionRenewalNotification(
+                $subscription,
+                'upcoming'
+            ));
+        }
+    }
+
+    /**
+     * Send a renewal completed notification for a subscription
+     */
+    public function sendRenewalCompletedNotification(Subscription $subscription): void
+    {
+        if (!$subscription->isActive()) {
+            return;
+        }
+
+        $subscription->user->notify(new \App\Notifications\SubscriptionRenewalNotification(
+            $subscription,
+            'completed'
+        ));
+    }
+
+    /**
+     * Check for subscriptions that need renewal notifications
+     * This should be called via a daily scheduled task
+     */
+    public function checkAndSendRenewalNotifications(): void
+    {
+        Subscription::query()
+            ->where('status', 'active')
+            ->where('cancelled_at', null)
+            ->whereNotNull('current_period_ends_at')
+            ->chunk(100, function ($subscriptions) {
+                foreach ($subscriptions as $subscription) {
+                    $this->sendUpcomingRenewalNotification($subscription);
+                }
+            });
+    }
 }

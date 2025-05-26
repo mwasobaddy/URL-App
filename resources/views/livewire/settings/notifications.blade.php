@@ -12,6 +12,7 @@ new class extends Component {
         $this->notificationPreferences = auth()->user()->notification_preferences ?? [
             'email_list_access' => true,
             'email_list_updates' => true,
+            'email_subscription_updates' => true,
             'browser_notifications' => false
         ];
     }
@@ -87,6 +88,26 @@ new class extends Component {
                     >
                         <span
                             class="inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-1 ring-gray-900/5 transition-transform duration-200 ease-in-out {{ $notificationPreferences['email_list_updates'] ? 'translate-x-6' : 'translate-x-1' }}"
+                        ></span>
+                    </button>
+                </div>
+
+                <!-- Subscription Notifications -->
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-900 dark:text-white">Subscription Updates</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            Get notified about subscription renewals and billing updates
+                        </p>
+                    </div>
+                    <button
+                        type="button"
+                        wire:click="$set('notificationPreferences.email_subscription_updates', {{ !$notificationPreferences['email_subscription_updates'] }})"
+                        class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ease-in-out {{ $notificationPreferences['email_subscription_updates'] ? 'bg-emerald-500' : 'bg-gray-200 dark:bg-gray-700' }}"
+                        role="switch"
+                    >
+                        <span
+                            class="inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-1 ring-gray-900/5 transition-transform duration-200 ease-in-out {{ $notificationPreferences['email_subscription_updates'] ? 'translate-x-6' : 'translate-x-1' }}"
                         ></span>
                     </button>
                 </div>
