@@ -10,6 +10,7 @@ use Exception;
 
 class PayPalSubscriptionService
 {
+    protected PayPalClient $paypal;
     protected PayPalAPIService $paypalApi;
     protected SubscriptionService $subscriptionService;
     
@@ -19,21 +20,17 @@ class PayPalSubscriptionService
     ) {
         $this->paypalApi = $paypalApi;
         $this->subscriptionService = $subscriptionService;
-    }
-    protected PayPalClient $paypal;
-
-    public function __construct()
-    {
         $this->paypal = new PayPalClient;
         $this->paypal->setApiCredentials(config('paypal'));
         $this->paypal->getAccessToken();
     }
 
-    public function createPlan(Plan $plan): string
+    public function createPlan(Plan $plan, PlanVersion $version): array
     {
+        // Create product first
         $response = $this->paypal->createProduct([
-            'name' => $plan->name,
-            'description' => $plan->description,
+            'name' => $version->name,
+            'description' => $version->description,
             'type' => 'SERVICE',
             'category' => 'SOFTWARE',
         ]);
@@ -47,8 +44,8 @@ class PayPalSubscriptionService
         // Create Monthly Plan
         $monthlyPlan = $this->paypal->createPlan([
             'product_id' => $productId,
-            'name' => "{$plan->name} (Monthly)",
-            'description' => $plan->description,
+            'name' => "{$version->name} (Monthly)",
+            'description' => $version->description,
             'status' => 'ACTIVE',
             'billing_cycles' => [
                 [
@@ -61,7 +58,7 @@ class PayPalSubscriptionService
                     'total_cycles' => 0,
                     'pricing_scheme' => [
                         'fixed_price' => [
-                            'value' => number_format($plan->monthly_price, 2, '.', ''),
+                            'value' => number_format($version->monthly_price, 2, '.', ''),
                             'currency_code' => config('paypal.currency'),
                         ],
                     ],
@@ -81,8 +78,8 @@ class PayPalSubscriptionService
         // Create Yearly Plan
         $yearlyPlan = $this->paypal->createPlan([
             'product_id' => $productId,
-            'name' => "{$plan->name} (Yearly)",
-            'description' => $plan->description,
+            'name' => "{$version->name} (Yearly)",
+            'description' => $version->description,
             'status' => 'ACTIVE',
             'billing_cycles' => [
                 [
@@ -95,7 +92,7 @@ class PayPalSubscriptionService
                     'total_cycles' => 0,
                     'pricing_scheme' => [
                         'fixed_price' => [
-                            'value' => number_format($plan->yearly_price, 2, '.', ''),
+                            'value' => number_format($version->yearly_price, 2, '.', ''),
                             'currency_code' => config('paypal.currency'),
                         ],
                     ],
@@ -120,8 +117,16 @@ class PayPalSubscriptionService
 
     public function createSubscription(User $user, Plan $plan, string $interval = 'monthly'): Subscription
     {
-        $planId = $interval === 'yearly' ? $plan->paypal_yearly_plan_id : $plan->paypal_monthly_plan_id;
-        
+        $version = $plan->getCurrentVersion();
+        if (!$version) {
+            throw new \Exception('No active version found for the plan');
+        }
+
+        $planId = $interval === 'yearly' ? $version->paypal_yearly_plan_id : $version->paypal_monthly_plan_id;
+        if (!$planId) {
+            throw new \Exception('PayPal plan ID not found');
+        }
+
         $response = $this->paypal->createSubscription([
             'plan_id' => $planId,
             'subscriber' => [
@@ -146,6 +151,7 @@ class PayPalSubscriptionService
         return Subscription::create([
             'user_id' => $user->id,
             'plan_id' => $plan->id,
+            'plan_version_id' => $version->id,
             'paypal_subscription_id' => $response['id'],
             'paypal_plan_id' => $planId,
             'status' => $response['status'],
@@ -155,42 +161,56 @@ class PayPalSubscriptionService
         ]);
     }
 
+    public function updateSubscriptionPlan(string $subscriptionId, string $newPlanId): bool
+    {
+        $response = $this->paypal->updateSubscription($subscriptionId, [
+            'plan_id' => $newPlanId,
+        ]);
+
+        return isset($response['id']);
+    }
+
+    public function updateSubscriptionPricing(
+        string $subscriptionId,
+        PlanVersion $newVersion,
+        string $interval,
+        array $proration
+    ): bool {
+        $price = $interval === 'yearly' ? $newVersion->yearly_price : $newVersion->monthly_price;
+
+        $response = $this->paypal->updateSubscriptionPricing($subscriptionId, [
+            'pricing_scheme' => [
+                'fixed_price' => [
+                    'value' => number_format($price, 2, '.', ''),
+                    'currency_code' => config('paypal.currency'),
+                ],
+            ],
+            'billing_info' => [
+                'outstanding_balance' => [
+                    'value' => number_format($proration['net_amount'], 2, '.', ''),
+                    'currency_code' => config('paypal.currency'),
+                ],
+            ],
+        ]);
+
+        return isset($response['id']);
+    }
+
     public function cancelSubscription(Subscription $subscription): bool
     {
-        $response = $this->paypal->cancelSubscription(
+        return $this->paypal->cancelSubscription(
             $subscription->paypal_subscription_id,
             'Plan cancelled by user'
         );
-
-        if ($response === '') {
-            $subscription->cancel();
-            return true;
-        }
-
-        return false;
     }
 
-    public function handleWebhook(array $payload)
+    public function verifyWebhookSignature(Request $request): bool
     {
-        $eventType = $payload['event_type'] ?? null;
-        $resource = $payload['resource'] ?? [];
+        return $this->paypalApi->verifyWebhookSignature($request);
+    }
 
-        switch ($eventType) {
-            case 'BILLING.SUBSCRIPTION.CREATED':
-                // Handle subscription creation
-                break;
-            case 'BILLING.SUBSCRIPTION.CANCELLED':
-                // Handle subscription cancellation
-                break;
-            case 'BILLING.SUBSCRIPTION.SUSPENDED':
-                // Handle subscription suspension
-                break;
-            case 'BILLING.SUBSCRIPTION.PAYMENT.FAILED':
-                // Handle payment failure
-                break;
-            case 'BILLING.SUBSCRIPTION.RENEWED':
-                // Handle subscription renewal
-                break;
-        }
+    public function handleWebhook(array $payload): void
+    {
+        $this->paypalApi->handleWebhook($payload);
     }
 }

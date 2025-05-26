@@ -15,9 +15,12 @@ class SubscriptionService
     protected PayPalSubscriptionService $paypalService;
     protected Collection $featureLimits;
     
-    public function __construct(RoleCheckService $roleService)
-    {
+    public function __construct(
+        RoleCheckService $roleService,
+        PayPalSubscriptionService $paypalService
+    ) {
         $this->roleService = $roleService;
+        $this->paypalService = $paypalService;
         $this->featureLimits = collect([
             'free' => [
                 'lists' => 3,
@@ -57,6 +60,7 @@ class SubscriptionService
             'plan' => $subscription->plan,
             'trial_ends_at' => $subscription->trial_ends_at,
             'ends_at' => $subscription->ends_at,
+            'version' => $subscription->planVersion,
         ];
     }
     
@@ -65,8 +69,62 @@ class SubscriptionService
      */
     public function getFeatureLimits(User $user): array
     {
-        $role = $this->roleService->getHighestRole() ?? 'free';
-        return $this->featureLimits->get($role, $this->featureLimits['free']);
+        $subscription = $user->subscription;
+        
+        if (!$subscription || !$subscription->planVersion) {
+            return $this->featureLimits['free'];
+        }
+
+        $version = $subscription->planVersion;
+        return array_merge(
+            $this->featureLimits['free'],
+            $version->features
+        );
+    }
+    
+    /**
+     * Switch a subscription to a new plan version
+     */
+    public function switchPlanVersion(Subscription $subscription, PlanVersion $newVersion): bool
+    {
+        try {
+            // Calculate proration
+            $currentVersion = $subscription->planVersion;
+            if ($currentVersion) {
+                $proration = $currentVersion->calculateProration($newVersion, $subscription->interval);
+                
+                // Update PayPal subscription if needed
+                if ($proration['net_amount'] != 0) {
+                    $this->paypalService->updateSubscriptionPricing(
+                        $subscription->paypal_subscription_id,
+                        $newVersion,
+                        $subscription->interval,
+                        $proration
+                    );
+                }
+            }
+            
+            // Update PayPal plan ID
+            $planId = $subscription->interval === 'yearly' 
+                ? $newVersion->paypal_yearly_plan_id
+                : $newVersion->paypal_monthly_plan_id;
+                
+            $this->paypalService->updateSubscriptionPlan(
+                $subscription->paypal_subscription_id,
+                $planId
+            );
+            
+            // Update local subscription
+            $subscription->update([
+                'plan_version_id' => $newVersion->id,
+                'paypal_plan_id' => $planId,
+            ]);
+            
+            return true;
+        } catch (Exception $e) {
+            report($e);
+            return false;
+        }
     }
     
     /**

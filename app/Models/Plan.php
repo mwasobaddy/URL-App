@@ -39,6 +39,11 @@ class Plan extends Model
         return $this->hasMany(Subscription::class);
     }
 
+    public function versions()
+    {
+        return $this->hasMany(PlanVersion::class);
+    }
+
     public function getPrice(string $interval = 'monthly'): float
     {
         return $interval === 'yearly' ? $this->yearly_price : $this->monthly_price;
@@ -54,5 +59,47 @@ class Plan extends Model
         }
 
         return (int) (100 - ($yearlyTotal / $monthlyTotal * 100));
+    }
+
+    public function getCurrentVersion(): ?PlanVersion
+    {
+        return $this->versions()
+            ->where('is_active', true)
+            ->where(function ($query) {
+                $now = now();
+                $query->where(function ($q) use ($now) {
+                    $q->whereNull('valid_from')
+                      ->orWhere('valid_from', '<=', $now);
+                })->where(function ($q) use ($now) {
+                    $q->whereNull('valid_until')
+                      ->orWhere('valid_until', '>', $now);
+                });
+            })
+            ->latest('valid_from')
+            ->first();
+    }
+
+    public function getVersion(string $version): ?PlanVersion
+    {
+        return $this->versions()->where('version', $version)->first();
+    }
+
+    public function createVersion(array $attributes): PlanVersion
+    {
+        // Generate version number if not provided
+        if (!isset($attributes['version'])) {
+            $latestVersion = $this->versions()->max('version') ?? '0.0.0';
+            $versionParts = explode('.', $latestVersion);
+            $versionParts[2] = (int)$versionParts[2] + 1;
+            $attributes['version'] = implode('.', $versionParts);
+        }
+
+        // Ensure only one active version at a time if this is being set as active
+        if (isset($attributes['is_active']) && $attributes['is_active']) {
+            $this->versions()->where('is_active', true)->update(['is_active' => false]);
+        }
+
+        // Create new version
+        return $this->versions()->create($attributes);
     }
 }

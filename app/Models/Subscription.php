@@ -14,6 +14,7 @@ class Subscription extends Model
     protected $fillable = [
         'user_id',
         'plan_id',
+        'plan_version_id',
         'status',
         'paypal_subscription_id',
         'paypal_plan_id',
@@ -41,6 +42,11 @@ class Subscription extends Model
     public function plan()
     {
         return $this->belongsTo(Plan::class);
+    }
+
+    public function planVersion()
+    {
+        return $this->belongsTo(PlanVersion::class, 'plan_version_id');
     }
 
     public function isActive(): bool
@@ -79,5 +85,11 @@ class Subscription extends Model
         $this->ends_at = null;
         $this->status = 'active';
         $this->save();
+    }
+
+    public function switchVersion(PlanVersion $newVersion): bool
+    {
+        // Use the subscription service to handle version switching
+        return app(SubscriptionService::class)->switchPlanVersion($this, $newVersion);
     }
 }

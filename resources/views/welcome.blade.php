@@ -255,7 +255,7 @@
                         Choose the plan that best fits your needs. All plans include core features.
                     </p>
                 </div>
-                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
+                {{-- <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
                     <!-- Free Plan -->
                     <div class="bg-white dark:bg-zinc-800 rounded-xl p-8 border border-emerald-100 dark:border-emerald-900/50 shadow-sm">
                         <div class="mb-6">
@@ -350,7 +350,9 @@
                             Contact sales
                         </a>
                     </div>
-                </div>
+                </div> --}}
+
+                <livewire:plans.pricing-table />
             </div>
         </section>
 
