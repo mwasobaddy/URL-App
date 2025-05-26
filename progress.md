@@ -113,11 +113,11 @@ Setup Tasks:
   - [x] Version management interface
   - [x] Feature configuration
   - [x] Pricing management
-- [ ] Add subscription metrics dashboard
-  - [ ] Active subscriptions count
-  - [ ] Trial conversions tracking
-  - [ ] Churn rate analysis
-  - [ ] MRR/ARR calculations
+- [x] Add subscription metrics dashboard
+  - [x] Active subscriptions count
+  - [x] Trial conversions tracking
+  - [x] Churn rate analysis
+  - [x] MRR/ARR calculations
 
 #### 6.2 User & Role Management
 - [x] User management interface

@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.7] - 2025-05-27
+
+### Added
+- Subscription metrics dashboard
+  - Real-time active subscriptions tracking
+  - Trial conversion rate analysis
+  - Churn rate monitoring with historical data
+  - MRR/ARR calculations and trend visualization
+  - Revenue trend chart with customizable date ranges
+  - Interactive metrics filtering and date selection
+  - Responsive design for all screen sizes
+
 ## [1.2.6] - 2025-05-27
 
 ### Added
