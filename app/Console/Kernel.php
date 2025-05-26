@@ -20,5 +20,8 @@ class Kernel extends ConsoleKernel
 
         // Generate scheduled reports
         $schedule->command('reports:generate')->dailyAt('01:00');
+
+        // Reset monitoring counters daily
+        $schedule->command('monitoring:reset-counters')->dailyAt('00:00');
     }
 }
