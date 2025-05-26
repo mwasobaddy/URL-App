@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Volt-based role-check component for conditional UI rendering
 - Feature-gate component with premium upgrade prompts
 - Service-based permission validation system
+- New SubscriptionService for subscription state management
+- UsageTrackingService for feature usage monitoring
+- SubscriptionServiceProvider for service registration
+- Services integration with Volt components
 - Refactored all Livewire components to use Volt syntax for better maintainability and performance
 - Removed old PHP class-based components in favor of Volt components
 - Components refactored:
