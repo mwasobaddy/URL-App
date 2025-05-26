@@ -1,3 +1,75 @@
+<?php
+
+use function Livewire\Volt\{state, mount, computed};
+use Illuminate\Support\Facades\Auth;
+use App\Models\AccessRequest;
+use App\Models\UrlList;
+use App\Notifications\AccessRequestNotification;
+
+state([
+    'urlList' => null,
+    'message' => '',
+    'showRequestForm' => false,
+]);
+
+mount(function (UrlList $urlList) {
+    $this->urlList = $urlList;
+});
+
+$toggleRequestForm = function () {
+    $this->showRequestForm = !$this->showRequestForm;
+};
+
+$submitRequest = function () {
+    $this->validate([
+        'message' => 'nullable|string|max:1000',
+    ]);
+    
+    if ($this->urlList->hasPendingAccessRequest(Auth::id())) {
+        $this->dispatch('swal:toast', [
+            'type' => 'error',
+            'title' => 'You already have a pending request for this list.'
+        ]);
+        return;
+    }
+    
+    if ($this->urlList->isCollaborator(Auth::id())) {
+        $this->dispatch('swal:toast', [
+            'type' => 'error',
+            'title' => 'You are already a collaborator on this list.'
+        ]);
+        return;
+    }
+    
+    $accessRequest = AccessRequest::create([
+        'url_list_id' => $this->urlList->id,
+        'requester_id' => Auth::id(),
+        'message' => $this->message,
+        'status' => 'pending',
+    ]);
+    
+    $this->urlList->user->notify(new AccessRequestNotification($accessRequest));
+    
+    $this->message = '';
+    $this->showRequestForm = false;
+    
+    $this->dispatch('access-requested');
+    $this->dispatch('swal:toast', [
+        'type' => 'success',
+        'title' => 'Access request submitted successfully.'
+    ]);
+};
+
+$hasPendingRequest = computed(function () {
+    return $this->urlList->hasPendingAccessRequest(Auth::id());
+});
+
+$isCollaborator = computed(function () {
+    return $this->urlList->isCollaborator(Auth::id());
+});
+
+?>
+
 <div>
     @if (session()->has('success'))
         <div class="p-4 mb-4 text-sm text-green-700 bg-green-100 rounded-lg dark:bg-green-200 dark:text-green-800" role="alert">

@@ -1,3 +1,75 @@
+<?php
+
+use function Livewire\Volt\{state, mount, computed};
+use Illuminate\Support\Facades\Auth;
+
+state([
+    'unreadCount' => 0,
+    'showDropdown' => false,
+]);
+
+mount(function () {
+    $this->loadNotifications();
+});
+
+$loadNotifications = function () {
+    $this->unreadCount = Auth::user()->unreadNotifications()->count();
+};
+
+$toggleDropdown = function () {
+    $this->showDropdown = !$this->showDropdown;
+    if ($this->showDropdown) {
+        $this->dispatch('dropdown-opened');
+    }
+};
+
+$markAsRead = function ($notificationId) {
+    try {
+        $notification = Auth::user()->notifications()->findOrFail($notificationId);
+        $notification->markAsRead();
+        
+        $this->dispatch('swal:toast', [
+            'type' => 'success',
+            'title' => 'Notification marked as read'
+        ]);
+    } catch (\Exception $e) {
+        $this->dispatch('swal:toast', [
+            'type' => 'error',
+            'title' => 'Could not mark notification as read'
+        ]);
+    }
+
+    $this->loadNotifications();
+};
+
+$markAllAsRead = function () {
+    try {
+        Auth::user()->unreadNotifications->markAsRead();
+        
+        $this->dispatch('swal:toast', [
+            'type' => 'success',
+            'title' => 'All notifications marked as read'
+        ]);
+    } catch (\Exception $e) {
+        $this->dispatch('swal:toast', [
+            'type' => 'error',
+            'title' => 'Could not mark notifications as read'
+        ]);
+    }
+
+    $this->loadNotifications();
+};
+
+$notifications = computed(function () {
+    return Auth::user()
+        ->notifications()
+        ->latest()
+        ->take(5)
+        ->get();
+});
+
+?>
+
 <a href="{{ route('notifications') }}" class="flex items-center gap-2 w-full px-3 py-2 text-sm font-medium text-emerald-700 dark:text-emerald-300 hover:text-emerald-900 dark:hover:text-emerald-100 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 rounded-md transition-colors" wire:navigate>
     <div class="relative">
         <svg class="size-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">

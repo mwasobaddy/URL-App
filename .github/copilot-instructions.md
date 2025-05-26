@@ -42,20 +42,16 @@ URL-App is a web application that allows users to create, manage, and share list
     * Employ middleware for request filtering (e.g., authentication).
     * Use Laravel's validation features for data validation.
 
-2.  **Livewire**
-    * **Volt:**
-        * Use Volt for creating single-file Livewire components, especially for simpler UI elements. This promotes conciseness.
-        * Favor Volt when a component's logic is tightly coupled with its view.
-    * **Flux:**
-        * Employ Flux for managing state within Livewire components, particularly for more complex interactions.
-        * Use actions to mutate state and getters to derive data from state.
-        * Structure Flux stores to reflect the component's data requirements.
-    * **General Livewire:**
-        * Use Livewire for dynamic parts of the UI (e.g., adding/editing URLs, list interactions).
-        * Keep Livewire components focused on specific UI concerns.
-        * Avoid excessive database queries within the view; fetch data in the component's methods.
-        * Use Livewire's lifecycle hooks (e.g., `mount`, `updating`) effectively.
-        * Use Livewire's events for communication between components.
+2.  **Livewire with Volt**
+    * Always use Volt for new Livewire components instead of traditional class-based components
+    * Utilize the `#[Volt]` attribute for components
+    * Leverage Volt's computed properties and reactive state management
+    * Use Volt's inline event handling and state bindings
+    * Take advantage of Volt's automatic dependency injection
+    * Place Volt components in dedicated `.blade.php` files under `resources/views/livewire`
+    * Prefer using Volt's reactive syntax over traditional Livewire event handling
+    * Use Volt's lifecycle hooks like `mount`, `booted`, `hydrate` when needed
+    * Implement form handling using Volt's built-in form utilities
 
 3.  **PHP 8.2+**
     * Write code that is compatible with PHP 8.2+ and takes advantage of its features.

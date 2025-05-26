@@ -1,3 +1,89 @@
+<?php
+
+use function Livewire\Volt\{state, mount, computed};
+use App\Models\AccessRequest;
+use App\Models\ListCollaborator;
+use App\Models\UrlList;
+use App\Models\User;
+use App\Notifications\AccessResponseNotification;
+use Illuminate\Support\Facades\Auth;
+use Livewire\WithPagination;
+
+state([
+    'urlList' => null,
+    'allowAccessRequests' => false,
+    'emailSearch' => '',
+    'showInviteForm' => false,
+]);
+
+mount(function (UrlList $urlList) {
+    $this->urlList = $urlList;
+    $this->allowAccessRequests = $urlList->allow_access_requests;
+    
+    if (Auth::id() !== $this->urlList->user_id) {
+        abort(403);
+    }
+});
+
+$toggleInviteForm = function () {
+    $this->showInviteForm = !$this->showInviteForm;
+};
+
+$toggleAccessRequests = function () {
+    $this->urlList->allow_access_requests = !$this->urlList->allow_access_requests;
+    $this->urlList->save();
+    $this->allowAccessRequests = $this->urlList->allow_access_requests;
+
+    $this->dispatch('swal:toast', [
+        'title' => 'Sharing settings updated successfully.'
+    ]);
+    $this->dispatch('refreshComponent');
+};
+
+$approveRequest = function ($requestId) {
+    $request = AccessRequest::findOrFail($requestId);
+    
+    if ($request->url_list_id !== $this->urlList->id) {
+        abort(403);
+    }
+    
+    $request->update(['status' => 'approved']);
+    
+    ListCollaborator::create([
+        'user_id' => $request->requester_id,
+    ]);
+    
+    $request->requester->notify(new AccessResponseNotification($request, true));
+    
+    $this->dispatch('swal:toast', [
+        'title' => 'Access request approved successfully.'
+    ]);
+};
+
+$denyRequest = function ($requestId) {
+    $request = AccessRequest::findOrFail($requestId);
+    
+    if ($request->url_list_id !== $this->urlList->id) {
+        abort(403);
+    }
+    
+    $request->update(['status' => 'rejected']);
+    $request->requester->notify(new AccessResponseNotification($request, false));
+};
+
+$collaborators = computed(function () {
+    return $this->urlList->collaborators;
+});
+
+$pendingRequests = computed(function () {
+    return $this->urlList->accessRequests()
+        ->where('status', 'pending')
+        ->with('requester')
+        ->get();
+});
+
+?>
+
 <div class="max-w-4xl mx-auto my-8 backdrop-blur-sm bg-white/90 dark:bg-neutral-800/90 shadow-xl rounded-3xl p-6 border border-gray-100/40 dark:border-neutral-700/50 transition-all duration-300 relative overflow-hidden">
     <!-- Decorative elements - subtle background patterns -->
     <div class="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-emerald-400/10 to-transparent rounded-full blur-3xl -z-10"></div>
