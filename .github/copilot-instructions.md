@@ -124,4 +124,12 @@ When prompting the AI, be specific and provide context:
 * **Performance:** Optimize database queries and UI rendering for optimal performance.
 * **User Experience (UX):** Design a user-friendly and intuitive interface.
 
+* **Change logging:** 
+    * Each time you generate code, log the changes made in a `CHANGELOG.md` file.
+    * Follow semantic versioning guidelines for the project.
+    * Include a brief description of the changes, the date, and the author.
+
+* **Documentation:** Maintain clear and concise documentation for the codebase, including comments, README files, and API documentation where applicable inside the `DOCUMENTATION.md`.
+* **Code Reviews:** Conduct regular code reviews to ensure adherence to best practices and maintain code quality.
+
 By following these guidelines, we can ensure that the URL-App is developed in a consistent, efficient, and maintainable manner.
