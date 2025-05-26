@@ -17,6 +17,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Payment processing and verification
   - Success/failure handling
   - Trial period support
+- New subscription activation flow
+  - Real-time activation status
+  - Automatic retry mechanism
+  - User-friendly error handling
+  - Webhook integration for status updates
 - PayPalAPIService for robust API interactions
   - Rate limiting handling
   - Idempotency key generation
