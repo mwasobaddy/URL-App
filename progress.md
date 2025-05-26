@@ -84,13 +84,67 @@ Setup Tasks:
 - [x] Add subscription renewal handling with notifications
 
 ### 6. Admin Dashboard
+#### 6.1 Subscription & Plan Management
 - [ ] Create subscription management interface
+  - [ ] Subscription listing with filters and search
+  - [ ] Detailed subscription view
+  - [ ] Manual subscription controls
+  - [ ] Subscription history tracking
 - [ ] Implement customer subscription overview
-- [ ] Add revenue analytics
+  - [ ] Customer listing with subscription status
+  - [ ] Subscription metrics per customer
+  - [ ] Usage statistics visualization
 - [ ] Create plan management UI
-- [ ] Implement subscription status controls
+  - [ ] Plan CRUD operations
+  - [ ] Version management interface
+  - [ ] Feature configuration
+  - [ ] Pricing management
 - [ ] Add subscription metrics dashboard
+  - [ ] Active subscriptions count
+  - [ ] Trial conversions tracking
+  - [ ] Churn rate analysis
+  - [ ] MRR/ARR calculations
+
+#### 6.2 User & Role Management
+- [ ] User management interface
+  - [ ] User listing with filters and search
+  - [ ] User profile editing
+  - [ ] Activity history
+  - [ ] Manual status controls
+- [ ] Role and permission management
+  - [ ] Role CRUD operations
+  - [ ] Permission assignment
+  - [ ] Role hierarchy management
+  - [ ] Bulk role updates
+
+#### 6.3 Financial Management
+- [ ] Revenue analytics dashboard
+  - [ ] Revenue by plan type
+  - [ ] Revenue by period
+  - [ ] Payment success/failure rates
+  - [ ] Refund tracking
 - [ ] Create revenue reports export
+  - [ ] Custom date range selection
+  - [ ] Multiple export formats
+  - [ ] Automated report scheduling
+  - [ ] Tax reporting features
+
+#### 6.4 System Monitoring
+- [ ] System health dashboard
+  - [ ] Server status monitoring
+  - [ ] Queue health metrics
+  - [ ] Cache performance stats
+  - [ ] Error rate tracking
+- [ ] Activity and audit logs
+  - [ ] User action logging
+  - [ ] System event tracking
+  - [ ] Security event monitoring
+  - [ ] Log viewer interface
+- [ ] PayPal integration monitoring
+  - [ ] API health status
+  - [ ] Transaction success rates
+  - [ ] Webhook reliability metrics
+  - [ ] Error tracking and alerts
 
 ### 7. Webhooks & Logging
 Documentation Reference: https://developer.paypal.com/api/rest/webhooks/
