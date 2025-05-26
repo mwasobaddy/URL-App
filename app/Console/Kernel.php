@@ -17,5 +17,8 @@ class Kernel extends ConsoleKernel
         $schedule->call(function () {
             app(SubscriptionService::class)->checkAndSendRenewalNotifications();
         })->dailyAt('00:00');
+
+        // Generate scheduled reports
+        $schedule->command('reports:generate')->dailyAt('01:00');
     }
 }

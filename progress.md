@@ -137,11 +137,11 @@ Setup Tasks:
   - [ ] Revenue by period
   - [ ] Payment success/failure rates
   - [ ] Refund tracking
-- [ ] Create revenue reports export
-  - [ ] Custom date range selection
-  - [ ] Multiple export formats
-  - [ ] Automated report scheduling
-  - [ ] Tax reporting features
+- [x] Create revenue reports export
+  - [x] Custom date range selection
+  - [x] Multiple export formats
+  - [x] Automated report scheduling
+  - [x] Tax reporting features
 
 #### 6.4 System Monitoring
 - [ ] System health dashboard
