@@ -106,16 +106,16 @@ Setup Tasks:
   - [ ] MRR/ARR calculations
 
 #### 6.2 User & Role Management
-- [ ] User management interface
-  - [ ] User listing with filters and search
-  - [ ] User profile editing
-  - [ ] Activity history
-  - [ ] Manual status controls
-- [ ] Role and permission management
-  - [ ] Role CRUD operations
-  - [ ] Permission assignment
-  - [ ] Role hierarchy management
-  - [ ] Bulk role updates
+- [x] User management interface
+  - [x] User listing with filters and search
+  - [x] User profile editing
+  - [x] Activity history
+  - [x] Manual status controls
+- [x] Role and permission management
+  - [x] Role CRUD operations
+  - [x] Permission assignment
+  - [x] Role hierarchy management
+  - [x] Bulk role updates
 
 #### 6.3 Financial Management
 - [ ] Revenue analytics dashboard
