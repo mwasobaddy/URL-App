@@ -7,10 +7,10 @@
   - [x] Detailed subscription view
   - [x] Manual subscription controls
   - [x] Subscription history tracking
-- [ ] Implement customer subscription overview
-  - [ ] Customer listing with subscription status
-  - [ ] Subscription metrics per customer
-  - [ ] Usage statistics visualization
+- [x] Implement customer subscription overview
+  - [x] Customer listing with subscription status
+  - [x] Subscription metrics per customer
+  - [x] Usage statistics visualization
 - [x] Create plan management UI
   - [x] Plan CRUD operations with Volt components
   - [x] Version management interface

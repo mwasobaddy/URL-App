@@ -63,6 +63,14 @@ $sort = function (string $field) {
                 Manage and monitor user subscriptions
             </p>
         </div>
+        <div class="mt-4 sm:mt-0">
+            <a
+                href="{{ route('admin.subscriptions.customers') }}"
+                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
+            >
+                Customer Overview
+            </a>
+        </div>
     </div>
 
     {{-- Stats Overview --}}

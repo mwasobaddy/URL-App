@@ -9,6 +9,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     // Subscriptions
     Route::prefix('subscriptions')->name('subscriptions.')->group(function () {
         Route::get('/', \App\Livewire\Admin\Subscriptions\Index::class)->name('index');
+        Route::get('/customers', \App\Livewire\Admin\Customers\SubscriptionOverview::class)->name('customers');
         Route::get('/{subscription}', \App\Livewire\Admin\Subscriptions\Show::class)->name('show');
     });
     
