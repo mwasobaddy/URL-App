@@ -71,13 +71,13 @@
                             Subscription
                         </div>
                         <div class="space-y-1">
-                            <a href="{{ route('subscription') }}" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm {{ request()->routeIs('subscription') ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-900 dark:text-emerald-100' : 'text-emerald-800 dark:text-emerald-200 hover:bg-emerald-50 dark:hover:bg-emerald-900/30' }}" wire:navigate>
+                            <a href="{{ route('subscription.manage') }}" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm {{ request()->routeIs('subscription.manage') ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-900 dark:text-emerald-100' : 'text-emerald-800 dark:text-emerald-200 hover:bg-emerald-50 dark:hover:bg-emerald-900/30' }}" wire:navigate>
                                 <svg class="size-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
                                 </svg>
                                 My Subscription
                             </a>
-                            <a href="{{ route('pricing') }}" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm {{ request()->routeIs('pricing') ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-900 dark:text-emerald-100' : 'text-emerald-800 dark:text-emerald-200 hover:bg-emerald-50 dark:hover:bg-emerald-900/30' }}" wire:navigate>
+                            <a href="{{ route('plans') }}" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm {{ request()->routeIs('plans') ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-900 dark:text-emerald-100' : 'text-emerald-800 dark:text-emerald-200 hover:bg-emerald-50 dark:hover:bg-emerald-900/30' }}" wire:navigate>
                                 <svg class="size-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
@@ -106,7 +106,25 @@
 
                         <!-- Notifications Container with Fixed Position Context -->
                         <div class="relative">
-                            <livewire:notifications-dropdown />
+                            <div>
+                                @php
+                                $unreadCount = auth()->user()->unreadNotifications()->count();
+                                @endphp
+                                
+                                <a href="{{ route('notifications') }}" class="flex items-center gap-2 w-full px-3 py-2 text-sm font-medium text-emerald-700 dark:text-emerald-300 hover:text-emerald-900 dark:hover:text-emerald-100 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 rounded-md transition-colors" wire:navigate>
+                                    <div class="relative">
+                                        <svg class="size-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+                                        </svg>
+                                        @if($unreadCount > 0)
+                                            <span class="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500 text-xs font-bold text-white ring-2 ring-white dark:ring-zinc-800">
+                                                {{ $unreadCount }}
+                                            </span>
+                                        @endif
+                                    </div>
+                                    <span>Notifications</span>
+                                </a>
+                            </div>
                         </div>
 
                         <!-- Logout -->

@@ -6,7 +6,7 @@ use App\Services\PayPalSubscriptionService;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 
-new #[Layout('layouts.app')] #[Title('Subscribe')] class extends Component
+new #[Layout('components.layouts.app')] #[Title('Subscribe')] class extends Component
 {
     public ?Plan $plan = null;
     public string $interval = 'monthly';

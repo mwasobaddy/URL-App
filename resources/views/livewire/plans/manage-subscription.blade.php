@@ -6,7 +6,7 @@ use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Volt\Component;
 
-new #[Layout('layouts.app')] #[Title('Manage Subscription')] class extends Component
+new #[Layout('components.layouts.app')] #[Title('Manage Subscription')] class extends Component
 {
     public $subscription = null;
     public $error = null;

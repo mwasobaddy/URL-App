@@ -21,10 +21,5 @@ class DatabaseSeeder extends Seeder
             CurrencySeeder::class,
             PlanSeeder::class,
         ]);
-
-        // User::factory()->create([
-        //     'name' => 'Kelvin Mwangi Wanjohi',
-        //     'email' => 'kelvinramsiel@gmail.com',
-        // ]);
     }
 }

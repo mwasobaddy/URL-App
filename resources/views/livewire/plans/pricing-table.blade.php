@@ -5,7 +5,7 @@ use App\Models\Plan;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 
-new #[Layout('layouts.app')] #[Title('Subscription Plans')] class extends Component
+new #[Layout('components.layouts.app')] #[Title('Subscription Plans')] class extends Component
 {
     public $interval = 'monthly';
     public $plans = [];
