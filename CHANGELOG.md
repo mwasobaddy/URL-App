@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.10] - 2025-05-31
+
+### Changed
+- Enhanced sidebar navigation system
+  - Combined admin navigation elements from admin.blade.php into sidebar.blade.php
+  - Added conditional display of admin sections based on user roles
+  - Updated route names to match current routes in admin.php
+  - Added missing navigation link for Revenue Analytics
+  - Added Monitoring section to System Health navigation
+  - Maintained consistent styling and design patterns
+  - Preserved role-based access control for all admin sections
+
 ## [1.2.9] - 2025-05-26
 
 ### Added

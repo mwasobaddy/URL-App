@@ -148,14 +148,14 @@ new class extends Component {
 
     {{-- Stats Overview --}}
     <div class="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        <flux:stat-card
+        <x-stats-card
             title="Total Users"
             :value="$this->stats['total']"
             icon="users"
             trend="none"
         />
         
-        <flux:stat-card
+        <x-stats-card
             title="Active Subscriptions"
             :value="$this->stats['subscribed']"
             icon="credit-card"
@@ -163,7 +163,7 @@ new class extends Component {
             trend="none"
         />
         
-        <flux:stat-card
+        <x-stats-card
             title="Trial Users"
             :value="$this->stats['trial']"
             icon="clock"
@@ -171,7 +171,7 @@ new class extends Component {
             trend="none"
         />
         
-        <flux:stat-card
+        <x-stats-card
             title="Free Users"
             :value="$this->stats['free']"
             icon="user"
@@ -333,7 +333,7 @@ new class extends Component {
     </div>
 
     {{-- Bulk Role Update Modal --}}
-    <x-dialog-modal wire:model.live="showBulkRoleModal">
+    <flux:modal wire:model.live="showBulkRoleModal">
         <x-slot name="title">
             Update Role for Selected Users
         </x-slot>
@@ -363,13 +363,13 @@ new class extends Component {
         </x-slot>
 
         <x-slot name="footer">
-            <x-secondary-button wire:click="$set('showBulkRoleModal', false)" wire:loading.attr="disabled">
+            <flux:button wire:click="$set('showBulkRoleModal', false)" wire:loading.attr="disabled">
                 Cancel
-            </x-secondary-button>
+            </flux:button>
 
             <x-button class="ml-3" wire:click="updateUserRole" wire:loading.attr="disabled">
                 Update Role
             </x-button>
         </x-slot>
-    </x-dialog-modal>
+    </flux:modal>
 </div>

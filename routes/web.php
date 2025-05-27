@@ -9,11 +9,14 @@ use App\Http\Controllers\SubscriptionController;
 
 Route::view('/', 'welcome')->name('home');
 
-Route::view('dashboard', 'dashboard')
-    ->middleware(['auth', 'verified'])
-    ->name('dashboard');
+
+
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::view('dashboard', 'dashboard')->name('dashboard');
+});
 
 Route::middleware(['auth'])->group(function () {
+    // User Profile
     Route::redirect('settings', 'settings/profile');
 
     Volt::route('settings/profile', 'settings.profile')->name('settings.profile');
@@ -47,7 +50,7 @@ Volt::route('lists/{custom_url}', 'url-list-display')->name('lists.public');
 // Admin Routes
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     // Dashboard
-    Volt::route('/', 'admin.dashboard')->name('dashboard');
+    Volt::route('/dashboard', 'admin.dashboard')->name('dashboard');
     
     // Subscriptions
     Route::prefix('subscriptions')->name('subscriptions.')->group(function () {

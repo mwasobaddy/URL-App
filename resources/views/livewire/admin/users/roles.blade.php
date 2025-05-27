@@ -171,7 +171,7 @@ new class extends Component
     </div>
 
     {{-- Create Role Modal --}}
-    <x-dialog-modal wire:model.live="showCreateModal">
+    <flux:modal wire:model.live="showCreateModal">
         <x-slot name="title">
             Create New Role
         </x-slot>
@@ -220,18 +220,18 @@ new class extends Component
         </x-slot>
 
         <x-slot name="footer">
-            <x-secondary-button wire:click="$set('showCreateModal', false)" wire:loading.attr="disabled">
+            <flux:button wire:click="$set('showCreateModal', false)" wire:loading.attr="disabled">
                 Cancel
-            </x-secondary-button>
+            </flux:button>
 
             <x-button class="ml-3" wire:click="createRole" wire:loading.attr="disabled">
                 Create Role
             </x-button>
         </x-slot>
-    </x-dialog-modal>
+    </flux:modal>
 
     {{-- Edit Role Modal --}}
-    <x-dialog-modal wire:model.live="showEditModal">
+    <flux:modal wire:model.live="showEditModal">
         <x-slot name="title">
             Edit Role
         </x-slot>
@@ -281,15 +281,15 @@ new class extends Component
         </x-slot>
 
         <x-slot name="footer">
-            <x-secondary-button wire:click="$set('showEditModal', false)" wire:loading.attr="disabled">
+            <flux:button wire:click="$set('showEditModal', false)" wire:loading.attr="disabled">
                 Cancel
-            </x-secondary-button>
+            </flux:button>
 
             <x-button class="ml-3" wire:click="updateRole" wire:loading.attr="disabled">
                 Update Role
             </x-button>
         </x-slot>
-    </x-dialog-modal>
+    </flux:modal>
 
     {{-- Delete Role Modal --}}
     <x-confirmation-modal wire:model.live="showDeleteModal">
@@ -302,9 +302,9 @@ new class extends Component
         </x-slot>
 
         <x-slot name="footer">
-            <x-secondary-button wire:click="$set('showDeleteModal', false)" wire:loading.attr="disabled">
+            <flux:button wire:click="$set('showDeleteModal', false)" wire:loading.attr="disabled">
                 Cancel
-            </x-secondary-button>
+            </flux:button>
 
             <x-danger-button class="ml-3" wire:click="deleteRole" wire:loading.attr="disabled">
                 Delete Role

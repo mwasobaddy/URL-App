@@ -64,14 +64,14 @@ new class extends Component {
 
     <!-- Stats -->
     <div class="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        <flux:stat-card
+        <x-stats-card
             title="Total Subscriptions"
             :value="$this->subscriptionCount"
             icon="users"
             trend="none"
         />
 
-        <flux:stat-card
+        <x-stats-card
             title="Active Subscriptions"
             :value="$this->activeSubscriptionCount"
             icon="check-circle"
@@ -79,7 +79,7 @@ new class extends Component {
             trend="none"
         />
         
-        <flux:stat-card
+        <x-stats-card
             title="Total Versions"
             :value="$this->versions->count()"
             icon="document-duplicate"
@@ -87,7 +87,7 @@ new class extends Component {
             trend="none"
         />
         
-        <flux:stat-card
+        <x-stats-card
             title="Monthly Revenue"
             :value="'$' . number_format($this->activeSubscriptionCount * $plan->monthly_price, 2)"
             icon="currency-dollar"

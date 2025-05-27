@@ -1,5 +1,51 @@
 # URL-App Documentation
 
+## Navigation Structure
+
+As of version 1.2.10, we've updated the navigation system to use a unified approach, combining both user and admin navigation elements in a single sidebar component.
+
+### Role-Based Navigation
+
+The sidebar (`resources/views/components/layouts/app/sidebar.blade.php`) now includes:
+
+1. **Main Navigation**: Basic navigation for all users
+   - Dashboard (Admin Dashboard for admin users, User Dashboard for regular users)
+   - My URL Lists (available to all users)
+
+2. **Administration Section**: Only visible to users with the "admin" role
+   - Subscriptions
+   - Users & Roles
+   - Plans
+   - Analytics
+   - Revenue Analytics
+
+3. **System Health Section**: Only visible to users with the "admin" role
+   - System Logs
+   - Monitoring
+   - Health Checks
+   - PayPal Webhooks
+
+4. **Settings**: Available to all users
+   - Profile
+   - Password
+   - Appearance
+
+5. **Actions**: Available to all users
+   - Create New List
+
+6. **Subscription**: Available to all users
+   - My Subscription
+   - View Plans
+
+### Implementation Details
+
+- Admin-only sections are wrapped in a conditional check: `@if(auth()->user()->hasRole('admin'))`
+- All navigation links use consistent styling for visual coherence
+- Active state is managed using `request()->routeIs()` checks
+- Admin routes are prefixed with `admin.` and use consistent naming patterns
+
+# URL-App Documentation
+
 ## Service Injection in Volt Components
 
 As of version 1.2.8, we've updated how services are accessed in Volt components. The previous approach using `Volt::provide()` is not compatible with Livewire Volt 1.7.1.

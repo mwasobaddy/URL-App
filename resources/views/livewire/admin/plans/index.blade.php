@@ -87,14 +87,14 @@ new class extends Component {
 
     {{-- Stats Overview --}}
     <div class="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        <flux:stat-card
+        <x-stats-card
             title="Total Plans"
             :value="$this->stats['total']"
             icon="document-text"
             trend="none"
         />
         
-        <flux:stat-card
+        <x-stats-card
             title="Active Plans"
             :value="$this->stats['active']"
             icon="check-circle"
@@ -102,7 +102,7 @@ new class extends Component {
             trend="none"
         />
         
-        <flux:stat-card
+        <x-stats-card
             title="Featured Plans"
             :value="$this->stats['featured']"
             icon="star"
@@ -110,7 +110,7 @@ new class extends Component {
             trend="none"
         />
         
-        <flux:stat-card
+        <x-stats-card
             title="Archived Plans"
             :value="$this->stats['archived']"
             icon="archive"
@@ -255,7 +255,7 @@ new class extends Component {
     </div>
 
     {{-- Delete Confirmation Modal --}}
-    <x-dialog-modal wire:model.live="showDeleteModal">
+    <flux:modal wire:model.live="showDeleteModal">
         <x-slot name="title">
             Delete Plan
         </x-slot>
@@ -267,13 +267,13 @@ new class extends Component {
         </x-slot>
 
         <x-slot name="footer">
-            <x-secondary-button wire:click="$set('showDeleteModal', false)" wire:loading.attr="disabled">
+            <flux:button wire:click="$set('showDeleteModal', false)" wire:loading.attr="disabled">
                 Cancel
-            </x-secondary-button>
+            </flux:button>
 
             <x-danger-button class="ml-3" wire:click="deletePlan" wire:loading.attr="disabled">
                 Delete Plan
             </x-danger-button>
         </x-slot>
-    </x-dialog-modal>
+    </flux:modal>
 </div>

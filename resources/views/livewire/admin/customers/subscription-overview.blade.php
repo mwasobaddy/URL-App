@@ -116,14 +116,14 @@ new class extends Component {
 
     {{-- Stats Overview --}}
     <div class="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        <flux:stat-card
+        <x-stats-card
             title="Total Customers"
             :value="$this->stats['total']"
             icon="users"
             trend="none"
         />
         
-        <flux:stat-card
+        <x-stats-card
             title="Subscribed"
             :value="$this->stats['subscribed']"
             icon="check-circle"
@@ -131,7 +131,7 @@ new class extends Component {
             trend="none"
         />
         
-        <flux:stat-card
+        <x-stats-card
             title="On Trial"
             :value="$this->stats['trial']"
             icon="clock"
@@ -139,7 +139,7 @@ new class extends Component {
             trend="none"
         />
         
-        <flux:stat-card
+        <x-stats-card
             title="Cancelled"
             :value="$this->stats['cancelled']"
             icon="x-circle"

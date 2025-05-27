@@ -415,7 +415,7 @@ new class extends Component {
     </form>
 
     <!-- New Version Modal -->
-    <x-dialog-modal wire:model.live="showVersionModal">
+    <flux:modal wire:model.live="showVersionModal">
         <x-slot name="title">
             Create New Version
         </x-slot>
@@ -464,13 +464,13 @@ new class extends Component {
         </x-slot>
 
         <x-slot name="footer">
-            <x-secondary-button wire:click="$set('showVersionModal', false)" wire:loading.attr="disabled">
+            <flux:button wire:click="$set('showVersionModal', false)" wire:loading.attr="disabled">
                 Cancel
-            </x-secondary-button>
+            </flux:button>
 
             <x-button class="ml-3" wire:click="createVersion" wire:loading.attr="disabled">
                 Create Version
             </x-button>
         </x-slot>
-    </x-dialog-modal>
+    </flux:modal>
 </div>
