@@ -14,6 +14,30 @@ new class extends Component {
     public string $sortField = 'created_at';
     public string $sortDirection = 'desc';
     
+    // Convert these to computed properties to ensure they're accessible in the view
+    #[Computed]
+    public function statusOptions(): array
+    {
+        return [
+            '' => 'All Statuses',
+            'active' => 'Active',
+            'trialing' => 'Trialing',
+            'cancelled' => 'Cancelled',
+            'expired' => 'Expired'
+        ];
+    }
+    
+    #[Computed]
+    public function perPageOptions(): array
+    {
+        return [
+            10 => '10 per page',
+            25 => '25 per page',
+            50 => '50 per page',
+            100 => '100 per page'
+        ];
+    }
+    
     #[Computed]
     public function subscriptions(): LengthAwarePaginator 
     {
@@ -37,7 +61,7 @@ new class extends Component {
     #[Computed]
     public function stats(): array
     {
-        return [
+        $stats = [
             'total' => Subscription::count(),
             'active' => Subscription::where('status', 'active')->count(),
             'trial' => Subscription::whereNotNull('trial_ends_at')
@@ -45,6 +69,19 @@ new class extends Component {
                 ->count(),
             'cancelled' => Subscription::whereNotNull('cancelled_at')->count(),
         ];
+        
+        // Debug: Log the stats to see what's being returned
+        \Log::info('Stats data:', $stats);
+        
+        // Ensure all values are integers
+        foreach ($stats as $key => $value) {
+            if (!is_numeric($value)) {
+                \Log::error("Non-numeric value found in stats: {$key} = " . var_export($value, true));
+                $stats[$key] = 0;
+            }
+        }
+        
+        return $stats;
     }
     
     public function sort(string $field): void
@@ -90,14 +127,14 @@ new class extends Component {
     <div class="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
         <x-stats-card
             title="Total Subscriptions"
-            :value="$this->stats['total']"
+            :value="(int) ($this->stats['total'] ?? 0)"
             icon="document-text"
             trend="none"
         />
         
         <x-stats-card
             title="Active Subscriptions"
-            :value="$this->stats['active']"
+            :value="(int) ($this->stats['active'] ?? 0)"
             icon="check-circle"
             type="success"
             trend="none"
@@ -105,7 +142,7 @@ new class extends Component {
         
         <x-stats-card
             title="Trial Subscriptions"
-            :value="$this->stats['trial']"
+            :value="(int) ($this->stats['trial'] ?? 0)"
             icon="clock"
             type="info"
             trend="none"
@@ -113,7 +150,7 @@ new class extends Component {
         
         <x-stats-card
             title="Cancelled"
-            :value="$this->stats['cancelled']"
+            :value="(int) ($this->stats['cancelled'] ?? 0)"
             icon="x-circle"
             type="danger"
             trend="none"
@@ -124,33 +161,37 @@ new class extends Component {
     <div class="mt-6 bg-white dark:bg-zinc-800 shadow-sm rounded-lg divide-y dark:divide-zinc-700">
         <div class="px-4 py-5 sm:p-6">
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                <flux:input
-                    type="search"
-                    wire:model.live="search"
-                    placeholder="Search subscriptions..."
-                    icon="magnifying-glass"
-                />
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                    </div>
+                    <input
+                        type="search"
+                        wire:model.live="search"
+                        placeholder="Search subscriptions..."
+                        class="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-md leading-5 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm"
+                    />
+                </div>
 
-                <flux:select
+                <select
                     wire:model.live="status"
-                    :options="[
-                        '' => 'All Statuses',
-                        'active' => 'Active',
-                        'trialing' => 'Trialing',
-                        'cancelled' => 'Cancelled',
-                        'expired' => 'Expired'
-                    ]"
-                />
+                    class="block w-full py-2 px-3 border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm"
+                >
+                    @foreach($this->statusOptions as $value => $label)
+                        <option value="{{ $value }}">{{ $label }}</option>
+                    @endforeach
+                </select>
 
-                <flux:select
+                <select
                     wire:model.live="perPage"
-                    :options="[
-                        10 => '10 per page',
-                        25 => '25 per page',
-                        50 => '50 per page',
-                        100 => '100 per page'
-                    ]"
-                />
+                    class="block w-full py-2 px-3 border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm"
+                >
+                    @foreach($this->perPageOptions as $value => $label)
+                        <option value="{{ $value }}">{{ $label }}</option>
+                    @endforeach
+                </select>
             </div>
         </div>
 

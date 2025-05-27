@@ -1,6 +1,6 @@
 @props([
     'title' => '',          // Title for the stats card
-    'value' => '',          // Value to display
+    'value' => 0,           // Value to display - Changed default to 0 instead of empty string
     'type' => 'default',    // Visual styling: success, info, warning, danger, default
     'trend' => null,        // Trend indicator: up, down, none
     'trendText' => null,    // Custom trend text to display
@@ -16,6 +16,9 @@
         'danger' => 'bg-red-50 text-red-700 dark:bg-red-600/20 dark:text-red-300',
         default => 'bg-gray-50 text-gray-700 dark:bg-gray-600/20 dark:text-gray-300',
     };
+    
+    // Ensure value is properly formatted as string/number, not array
+    $displayValue = is_array($value) ? count($value) : (string) $value;
 @endphp
 
 <div class="rounded-md border border-gray-200 bg-white shadow-sm dark:border-gray-600 dark:bg-gray-800">
@@ -26,7 +29,7 @@
             </dt>
             <dd class="ml-2 flex items-baseline">
                 <div class="text-2xl font-semibold text-gray-900 dark:text-white">
-                    {{ $value }}
+                    {{ $displayValue }}
                 </div>
                 @if ($trend === 'up')
                     <div class="ml-2 text-sm font-medium text-green-600">
@@ -63,6 +66,10 @@
                         <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clip-rule="evenodd" />
                     @elseif ($icon === 'chart-bar')
                         <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
+                    @elseif ($icon === 'document-text')
+                        <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.414L15.586 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd" />
+                    @elseif ($icon === 'x-circle')
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
                     @else
                         <path d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4z" />
                     @endif
