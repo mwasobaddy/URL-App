@@ -44,4 +44,63 @@ Route::middleware(['auth'])->group(function () {
 // Public route for viewing a published list
 Volt::route('lists/{custom_url}', 'url-list-display')->name('lists.public');
 
+// Admin Routes
+Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
+    // Dashboard
+    Volt::route('/', 'admin.dashboard')->name('dashboard');
+    
+    // Subscriptions
+    Route::prefix('subscriptions')->name('subscriptions.')->group(function () {
+        Volt::route('/', 'admin.subscriptions.index')->name('index');
+        Volt::route('/customers', 'admin.customers.subscription-overview')->name('customers');
+        Volt::route('/metrics', 'admin.subscriptions.metrics-dashboard')->name('metrics');
+        Volt::route('/{subscription}', 'admin.subscriptions.show')->name('show');
+    });
+    
+    // Users & Roles
+    Route::prefix('users')->name('users.')->group(function () {
+        Volt::route('/', 'admin.users.index')->name('index');
+        Volt::route('/{user}', 'admin.users.show')->name('show');
+        Volt::route('/roles', 'admin.users.roles')->name('roles');
+    });
+    
+    // Plans
+    Route::prefix('plans')->name('plans.')->group(function () {
+        Volt::route('/', 'admin.plans.index')->name('index');
+        Volt::route('/create', 'admin.plans.create')->name('create');
+        Volt::route('/{plan}', 'admin.plans.show')->name('show');
+        Volt::route('/{plan}/edit', 'admin.plans.edit')->name('edit');
+    });
+    
+    // Analytics
+    Volt::route('/analytics', 'admin.analytics')->name('analytics');
+    
+    // Revenue
+    Route::prefix('revenue')->name('revenue.')->group(function () {
+        Volt::route('/', 'admin.revenue.analytics-dashboard')->name('analytics');
+        Volt::route('/export', 'admin.revenue.export-reports')->name('export');
+    });
+
+    // System Monitoring
+    Route::prefix('monitoring')->name('monitoring.')->group(function () {
+        Volt::route('/health', 'admin.monitoring.health-dashboard')->name('health');
+    });
+    
+    // System Logs
+    Volt::route('/logs', 'admin.logs')->name('logs');
+    
+    // System Health
+    Route::prefix('health')->name('health.')->group(function () {
+        Volt::route('/', 'admin.health.index')->name('index');
+        Volt::route('/queues', 'admin.health.queues')->name('queues');
+        Volt::route('/cache', 'admin.health.cache')->name('cache');
+    });
+    
+    // PayPal Webhooks
+    Route::prefix('webhooks')->name('webhooks.')->group(function () {
+        Volt::route('/', 'admin.webhooks.index')->name('index');
+        Volt::route('/logs', 'admin.webhooks.logs')->name('logs');
+    });
+});
+
 require __DIR__.'/auth.php';

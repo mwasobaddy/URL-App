@@ -29,37 +29,7 @@ return new class extends Migration
         });
 
         // Add version reference to subscriptions table
-        Schema::table('subscriptions', function (Blueprint $table) {
-            $table->foreignId('plan_version_id')->nullable()->after('plan_id')->constrained();
-        });
-
-        // Create initial version for all existing plans
-        $plans = DB::table('plans')->get();
-        foreach ($plans as $plan) {
-            DB::table('plan_versions')->insert([
-                'plan_id' => $plan->id,
-                'version' => '1.0.0',
-                'name' => $plan->name,
-                'description' => $plan->description,
-                'monthly_price' => $plan->monthly_price,
-                'yearly_price' => $plan->yearly_price,
-                'features' => $plan->features,
-                'is_active' => true,
-                'valid_from' => now(),
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-            
-            // Get the inserted version ID
-            $versionId = DB::table('plan_versions')
-                ->where('plan_id', $plan->id)
-                ->value('id');
-                
-            // Update existing subscriptions to use this version
-            DB::table('subscriptions')
-                ->where('plan_id', $plan->id)
-                ->update(['plan_version_id' => $versionId]);
-        }
+        // Initial versions will be created in a seeder instead
         Schema::table('subscriptions', function (Blueprint $table) {
             $table->foreignId('plan_version_id')->nullable()->after('plan_id')->constrained();
         });
