@@ -56,14 +56,25 @@ class AuditLogService
      */
     public function getActivityLogs(array $filters = []): \Illuminate\Pagination\LengthAwarePaginator
     {
-        $query = ActivityLog::with('user')
-            ->when(isset($filters['user_id']), fn($q) => $q->where('user_id', $filters['user_id']))
-            ->when(isset($filters['event']), fn($q) => $q->where('event', 'like', "%{$filters['event']}%"))
-            ->when(isset($filters['type']), fn($q) => $q->where('auditable_type', $filters['type']))
-            ->when(isset($filters['tag']), fn($q) => $q->whereJsonContains('tags', $filters['tag']))
-            ->when(isset($filters['date_from']), fn($q) => $q->where('created_at', '>=', $filters['date_from']))
-            ->when(isset($filters['date_to']), fn($q) => $q->where('created_at', '<=', $filters['date_to']))
-            ->latest();
+        \Log::info('Getting activity logs with filters:', ['filters' => $filters]);
+        
+        try {
+            $query = ActivityLog::with('user')
+                ->when(!empty($filters['user_id']), fn($q) => $q->where('user_id', $filters['user_id']))
+                ->when(!empty($filters['event']), fn($q) => $q->where('event', 'like', "%{$filters['event']}%"))
+                ->when(!empty($filters['type']), fn($q) => $q->where('auditable_type', $filters['type']))
+                ->when(!empty($filters['tag']), fn($q) => $q->whereJsonContains('tags', $filters['tag']))
+                ->when(!empty($filters['date_from']), fn($q) => $q->where('created_at', '>=', $filters['date_from']))
+                ->when(!empty($filters['date_to']), fn($q) => $q->where('created_at', '<=', $filters['date_to']))
+                ->latest();
+
+            \Log::info('Query SQL:', [
+                'sql' => $query->toSql(),
+                'bindings' => $query->getBindings()
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error fetching activity logs: ' . $e->getMessage());
+        }
 
         return $query->paginate($filters['per_page'] ?? 15);
     }

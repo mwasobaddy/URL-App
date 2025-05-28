@@ -1,0 +1,11 @@
+fix: resolve activity logs display issue in system-logs component
+
+- Fixed error in Volt component where $logs variable was undefined
+- Added proper handling for AuditLogService instance in refreshLogs() method
+- Added getAuditLogService() helper method to ensure service availability
+- Fixed incorrect parameter passing in refreshLogs(), selectTab(), and applyFilters() methods
+- Added proper error handling in logs() computed property
+- Set pagination theme to Tailwind for consistent styling
+- Added debug information to help diagnose data retrieval issues
+- Improved log filtering with null-safe !empty() checks
+- Added detailed logging to track SQL queries and query results
