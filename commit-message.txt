@@ -1,11 +1,29 @@
-fix: resolve activity logs display issue in system-logs component
+feat(ui): redesign error pages with modern UI/UX
 
-- Fixed error in Volt component where $logs variable was undefined
-- Added proper handling for AuditLogService instance in refreshLogs() method
-- Added getAuditLogService() helper method to ensure service availability
-- Fixed incorrect parameter passing in refreshLogs(), selectTab(), and applyFilters() methods
-- Added proper error handling in logs() computed property
-- Set pagination theme to Tailwind for consistent styling
-- Added debug information to help diagnose data retrieval issues
-- Improved log filtering with null-safe !empty() checks
-- Added detailed logging to track SQL queries and query results
+Redesigned all error pages with modern, responsive UI and interactive SVG illustrations:
+
+- Completely revamped the error pages base layout (minimal.blade.php) with:
+  - Modern blue gradient background
+  - Split-screen layout (content + illustration)
+  - Enhanced typography using Poppins font
+  - Advanced animation effects (float, pulse, shimmer)
+  - Improved button design with hover effects
+
+- Added custom SVG illustrations specific to each error type:
+  - 404 (Not Found): Person on scooter looking for connection
+  - 403 (Forbidden): Shield and lock security visualization
+  - 500 (Server Error): Server rack with error indicators
+  - 503 (Service Unavailable): Maintenance worker with tools
+  - 419 (Page Expired): Key/token visualization with timeout indicators
+  - 429 (Too Many Requests): Traffic light with queue visualization
+  - 401 (Unauthorized): Padlock with login form visualization
+  - 402 (Payment Required): Credit card and payment terminal
+
+- Enhanced error descriptions to provide clearer guidance to users
+- Ensured consistent design language with the dashboard theme
+- Implemented responsive design for all screen sizes
+- Added subtle micro-interactions for improved user experience
+
+These changes provide a more engaging, informative, and visually appealing
+experience when users encounter error pages, maintaining brand consistency
+and improving the overall user journey even during error states.

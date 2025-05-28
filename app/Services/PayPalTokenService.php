@@ -10,17 +10,34 @@ use Exception;
 class PayPalTokenService
 {
     protected string $baseUrl;
-    protected string $clientId;
-    protected string $clientSecret;
+    protected ?string $clientId; // Allow null
+    protected ?string $clientSecret; // Allow null
     protected string $cacheKey = 'paypal_access_token';
     
     public function __construct()
     {
-        $this->baseUrl = config('paypal.mode') === 'sandbox' 
+        $mode = config('paypal.mode', 'sandbox'); // Default to sandbox if not set
+        $this->baseUrl = $mode === 'sandbox' 
             ? 'https://api-m.sandbox.paypal.com' 
             : 'https://api-m.paypal.com';
-        $this->clientId = config('paypal.client_id');
-        $this->clientSecret = config('paypal.client_secret');
+        
+        // Construct the correct config keys based on the mode
+        $configKeyPrefix = 'paypal.' . $mode;
+        $this->clientId = config($configKeyPrefix . '.client_id');
+        $this->clientSecret = config($configKeyPrefix . '.client_secret');
+
+        if (empty($this->clientId)) {
+            Log::error('PayPal Client ID is not configured correctly. Please check your .env file and paypal.php config.', [
+                'mode' => $mode,
+                'key_checked' => $configKeyPrefix . '.client_id'
+            ]);
+        }
+        if (empty($this->clientSecret)) {
+            Log::error('PayPal Client Secret is not configured correctly. Please check your .env file and paypal.php config.', [
+                'mode' => $mode,
+                'key_checked' => $configKeyPrefix . '.client_secret'
+            ]);
+        }
     }
     
     /**
@@ -43,6 +60,11 @@ class PayPalTokenService
      */
     public function refreshAccessToken(): string
     {
+        if (empty($this->clientId) || empty($this->clientSecret)) {
+            Log::error('PayPal API credentials (client_id or client_secret) are missing or not configured for the current mode.');
+            throw new Exception('PayPal API credentials are not configured. Please check application logs.');
+        }
+
         try {
             $response = Http::withBasicAuth($this->clientId, $this->clientSecret)
                 ->asForm()

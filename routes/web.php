@@ -83,9 +83,6 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
         Volt::route('/{plan}/edit', 'admin.plans.edit')->name('edit');
     });
     
-    // Analytics
-    Volt::route('/analytics', 'admin.analytics')->name('analytics');
-    
     // Revenue
     Route::prefix('revenue')->name('revenue.')->group(function () {
         Volt::route('/', 'admin.revenue.analytics-dashboard')->name('analytics');
