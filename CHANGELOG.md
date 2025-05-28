@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.11] - 2025-05-28
+
+### Fixed
+- Fixed circular dependency issue in service providers
+  - Resolved circular dependency between SubscriptionService and PayPalSubscriptionService
+  - Updated SubscriptionServiceProvider to properly register all services
+  - Added error handling to the Customer Subscription Overview component
+  - Fixed "trim(): Argument #1 ($string) must be of type string, array given" error when accessing Customer Overview
+
 ## [1.2.10] - 2025-05-31
 
 ### Changed

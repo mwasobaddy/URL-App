@@ -12,12 +12,12 @@ use Exception;
 class SubscriptionService
 {
     protected RoleCheckService $roleService;
-    protected PayPalSubscriptionService $paypalService;
+    protected ?PayPalSubscriptionService $paypalService;
     protected Collection $featureLimits;
     
     public function __construct(
         RoleCheckService $roleService,
-        PayPalSubscriptionService $paypalService
+        ?PayPalSubscriptionService $paypalService = null
     ) {
         $this->roleService = $roleService;
         $this->paypalService = $paypalService;
@@ -37,6 +37,14 @@ class SubscriptionService
                 'analytics' => true,
             ],
         ]);
+    }
+    
+    /**
+     * Get the subscription state for a user
+     */
+    public function setPayPalSubscriptionService(PayPalSubscriptionService $paypalService): void
+    {
+        $this->paypalService = $paypalService;
     }
     
     /**

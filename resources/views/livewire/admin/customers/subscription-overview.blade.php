@@ -83,14 +83,34 @@ new class extends Component {
     
     public function getUsageStats(User $user)
     {
-        $service = app(UsageTrackingService::class);
-        return $service->getTotalUsage($user);
+        try {
+            $service = app(UsageTrackingService::class);
+            return $service->getTotalUsage($user);
+        } catch (\Exception $e) {
+            \Log::error('Error getting usage stats: ' . $e->getMessage());
+            return [
+                'lists' => 0,
+                'urls' => 0,
+                'collaborators' => 0,
+            ];
+        }
     }
     
     public function getFeatureLimits(User $user)
     {
-        $service = app(SubscriptionService::class);
-        return $service->getFeatureLimits($user);
+        try {
+            $service = app(SubscriptionService::class);
+            return $service->getFeatureLimits($user);
+        } catch (\Exception $e) {
+            \Log::error('Error getting feature limits: ' . $e->getMessage());
+            return [
+                'lists' => 0,
+                'urls_per_list' => 0,
+                'collaborators' => 0,
+                'custom_domains' => false,
+                'analytics' => false,
+            ];
+        }
     }
     
     public function getUsagePercentage($used, $limit)
@@ -158,28 +178,26 @@ new class extends Component {
                     placeholder="Search customers..."
                     icon="magnifying-glass"
                 />
-
-                <flux:select
+                
+                <select 
                     wire:model.live="filter"
-                    :options="[
-                        '' => 'All Customers',
-                        'subscribed' => 'Active Subscriptions',
-                        'trial' => 'Trial Period',
-                        'cancelled' => 'Cancelled',
-                        'expired' => 'Expired',
-                        'no_subscription' => 'No Subscription'
-                    ]"
-                />
+                    class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md dark:bg-zinc-700 dark:border-zinc-600 dark:text-white">
+                    <option value="">All Customers</option>
+                    <option value="subscribed">Active Subscriptions</option>
+                    <option value="trial">Trial Period</option>
+                    <option value="cancelled">Cancelled</option>
+                    <option value="expired">Expired</option>
+                    <option value="no_subscription">No Subscription</option>
+                </select>
 
-                <flux:select
+                <select 
                     wire:model.live="perPage"
-                    :options="[
-                        10 => '10 per page',
-                        25 => '25 per page',
-                        50 => '50 per page',
-                        100 => '100 per page'
-                    ]"
-                />
+                    class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md dark:bg-zinc-700 dark:border-zinc-600 dark:text-white">
+                    <option value="10">10 per page</option>
+                    <option value="25">25 per page</option>
+                    <option value="50">50 per page</option>
+                    <option value="100">100 per page</option>
+                </select>
             </div>
         </div>
 

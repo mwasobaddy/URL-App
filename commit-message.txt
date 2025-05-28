@@ -1,23 +1,15 @@
-feat(ui): redesign error pages with modern UI/UX
+fix(admin): resolve circular dependency in subscription services
 
-Redesigned all error pages with modern, responsive UI and interactive SVG illustrations:
+Fixed an error occurring when clicking on the "Customer Overview" link in the subscriptions admin page:
 
-- Completely revamped the error pages base layout (minimal.blade.php) with:
-  - Modern blue gradient background
-  - Split-screen layout (content + illustration)
-  - Enhanced typography using Poppins font
-  - Advanced animation effects (float, pulse, shimmer)
-  - Improved button design with hover effects
+- Fixed circular dependency between SubscriptionService and PayPalSubscriptionService
+- Modified SubscriptionServiceProvider to properly register PayPalTokenService and PayPalAPIService
+- Updated SubscriptionService to accept nullable PayPalSubscriptionService and added setter method
+- Added error handling to Customer Subscription Overview component methods
+- Updated CHANGELOG.md with version 1.2.11
 
-- Added custom SVG illustrations specific to each error type:
-  - 404 (Not Found): Person on scooter looking for connection
-  - 403 (Forbidden): Shield and lock security visualization
-  - 500 (Server Error): Server rack with error indicators
-  - 503 (Service Unavailable): Maintenance worker with tools
-  - 419 (Page Expired): Key/token visualization with timeout indicators
-  - 429 (Too Many Requests): Traffic light with queue visualization
-  - 401 (Unauthorized): Padlock with login form visualization
-  - 402 (Payment Required): Credit card and payment terminal
+The error "trim(): Argument #1 ($string) must be of type string, array given" was caused by a circular 
+dependency that prevented services from being properly initialized.
 
 - Enhanced error descriptions to provide clearer guidance to users
 - Ensured consistent design language with the dashboard theme
