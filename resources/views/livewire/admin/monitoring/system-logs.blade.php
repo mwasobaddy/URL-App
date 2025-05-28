@@ -49,7 +49,10 @@ new class extends Component
             $filters = $this->filter;
             $service = $this->getAuditLogService();
             
-            if ($this->selectedTab !== 'all') {
+            if ($this->selectedTab === 'user') {
+                unset($filters['tag']);
+                $filters['user_id_not_null'] = true;
+            } elseif ($this->selectedTab !== 'all') {
                 $filters['tag'] = $this->selectedTab;
             }
 
@@ -413,7 +416,7 @@ new class extends Component
                     </tr>
                 </thead>
                 <tbody class="bg-white/60 dark:bg-zinc-800/60 backdrop-blur-sm divide-y divide-gray-200 dark:divide-zinc-700">
-                    @foreach($this->logs() as $log)
+                    @forelse($this->logs() as $log)
                         <tr class="hover:bg-gray-50/80 dark:hover:bg-zinc-700/30 transition-colors duration-150">
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                                 <div class="flex items-center">
@@ -469,7 +472,34 @@ new class extends Component
                                 </div>
                             </td>
                         </tr>
-                    @endforeach
+                    @empty
+                        <tr>
+                            <td colspan="4" class="px-6 py-12">
+                                <div class="flex flex-col items-center justify-center text-center">
+                                    <div class="w-16 h-16 mb-4 rounded-full bg-gray-100 dark:bg-zinc-700/50 flex items-center justify-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-gray-400 dark:text-gray-500" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
+                                        </svg>
+                                    </div>
+                                    <h3 class="text-lg font-medium text-gray-900 dark:text-white">No logs found</h3>
+                                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                                        No log entries match your current filters.
+                                        @if(!empty($filter['event']) || !empty($filter['date_from']) || !empty($filter['date_to']))
+                                            Try adjusting or resetting your filters.
+                                        @endif
+                                    </p>
+                                    @if(!empty($filter['event']) || !empty($filter['date_from']) || !empty($filter['date_to']))
+                                        <button
+                                            wire:click="resetFilters"
+                                            class="mt-4 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
+                                        >
+                                            Reset Filters
+                                        </button>
+                                    @endif
+                                </div>
+                            </td>
+                        </tr>
+                    @endforelse
                 </tbody>
             </table>
         </div>

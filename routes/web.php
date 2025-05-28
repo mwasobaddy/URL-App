@@ -98,13 +98,6 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
         Volt::route('/system-logs', 'admin.monitoring.system-logs')->name('system-logs');
     });
     
-    // System Health
-    Route::prefix('health')->name('health.')->group(function () {
-        Volt::route('/', 'admin.health.index')->name('index');
-        Volt::route('/queues', 'admin.health.queues')->name('queues');
-        Volt::route('/cache', 'admin.health.cache')->name('cache');
-    });
-    
     // PayPal Webhooks
     Route::prefix('webhooks')->name('webhooks.')->group(function () {
         Volt::route('/', 'admin.webhooks.index')->name('index');
