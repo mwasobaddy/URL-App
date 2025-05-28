@@ -3,11 +3,13 @@
 @section('title', __('Unauthorized'))
 @section('code', '401')
 @section('message', __('Unauthorized'))
-@section('message_description', __('Sorry, you are not authorized to access this page. Please log in or contact the administrator.'))
+@section('message_description')
+    Sorry, you are not authorized to access this page. Please log in or contact the administrator.
+@endsection
 
 @section('illustration')
 <!-- Custom SVG illustration for 401 page - Authentication concept -->
-<svg viewBox="0 0 650 500" xmlns="http://www.w3.org/2000/svg" class="w-full h-auto drop-shadow-2xl">
+<svg viewBox="0 0 650 500" xmlns="http://www.w3.org/2000/svg" class="w-full h-full drop-shadow-2xl">
   <!-- Locked Padlock -->
   <g class="animate-float" style="animation-duration: 8s;">
     <!-- Lock Body -->

@@ -3,11 +3,14 @@
 @section('title', __('Page Not Found'))
 @section('code', '404')
 @section('message', __('Page Not Found'))
-@section('message_description', __('The page you are looking for might have been removed, had its name changed, or is temporarily unavailable.'))
+
+@section('message_description')
+    The page you are looking for might have been removed, had its name changed, or is temporarily unavailable.
+@endsection
 
 @section('illustration')
 <!-- Custom SVG illustration for 404 page - Person on scooter looking for connection -->
-<svg viewBox="0 0 650 500" xmlns="http://www.w3.org/2000/svg" class="w-full h-auto drop-shadow-2xl">
+<svg viewBox="0 0 650 500" xmlns="http://www.w3.org/2000/svg" class="w-full h-full drop-shadow-2xl">
   <!-- Scooter and Person -->
   <g class="animate-float" style="animation-duration: 6s;">
     <ellipse cx="320" cy="390" rx="80" ry="15" fill="rgba(99, 102, 241, 0.2)"/>

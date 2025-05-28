@@ -207,3 +207,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 - Removed old PHP class-based Livewire components from app/Livewire directory
+## [1.2.0] - 2025-05-28
+### Added
+- Redesigned all error pages with modern UI/UX and interactive illustrations
+- Custom SVG illustrations for each error type (404, 403, 500, 503, 419, 429, 401, 402)
+- Enhanced error page template with responsive split-screen layout
+- Advanced animations and micro-interactions for error pages
+- Improved error messaging and user guidance
+
+### Changed
+- Updated minimal.blade.php with modern design elements and animations
+- Enhanced typography across error pages using Poppins font
+- Standardized error page styling to match dashboard theme
+
+## [1.2.1] - 2025-05-28
+### Fixed
+- Resolved "The yield expression can only be used inside a function" error in error pages
+- Updated error page templates to use @section/@endsection for message descriptions
+- Fixed template namespace references (errors:: to errors.)
+- Temporarily disabled test error abort in routes for development

@@ -3,11 +3,13 @@
 @section('title', __('Server Error'))
 @section('code', '500')
 @section('message', __('Server Error'))
-@section('message_description', __('Oops! Something went wrong on our servers. We are working to fix the problem. Please try again later.'))
+@section('message_description')
+    Oops! Something went wrong on our servers. We are working to fix the problem. Please try again later.
+@endsection
 
 @section('illustration')
 <!-- Custom SVG illustration for 500 page - Server maintenance concept -->
-<svg viewBox="0 0 650 500" xmlns="http://www.w3.org/2000/svg" class="w-full h-auto drop-shadow-2xl">
+<svg viewBox="0 0 650 500" xmlns="http://www.w3.org/2000/svg" class="w-full h-full drop-shadow-2xl">
   <!-- Server Racks -->
   <g class="animate-float" style="animation-duration: 7s;">
     <!-- Server Stack -->

@@ -1,13 +1,15 @@
-@extends('errors::minimal')
+@extends('errors.minimal')
 
 @section('title', __('Page Expired'))
 @section('code', '419')
 @section('message', __('Page Expired'))
-@section('message_description', __('Your session has expired. Please refresh and try again.'))
+@section('message_description')
+    Your session has expired. Please refresh and try again.
+@endsection
 
 @section('illustration')
 <!-- Custom SVG illustration for 419 page - Token/Security concept -->
-<svg viewBox="0 0 650 500" xmlns="http://www.w3.org/2000/svg" class="w-full h-auto drop-shadow-2xl">
+<svg viewBox="0 0 650 500" xmlns="http://www.w3.org/2000/svg" class="w-full h-full drop-shadow-2xl">
   <!-- Token/Key Visualization -->
   <g class="animate-float" style="animation-duration: 8s;">
     <!-- Key Body -->

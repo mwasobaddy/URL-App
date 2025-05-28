@@ -3,11 +3,13 @@
 @section('title', __('Service Unavailable'))
 @section('code', '503')
 @section('message', __('Service Unavailable'))
-@section('message_description', __('Sorry, we are doing some maintenance. Please check back soon.'))
+@section('message_description')
+    Sorry, we are doing some maintenance. Please check back soon.
+@endsection
 
 @section('illustration')
 <!-- Custom SVG illustration for 503 page - Maintenance concept -->
-<svg viewBox="0 0 650 500" xmlns="http://www.w3.org/2000/svg" class="w-full h-auto drop-shadow-2xl">
+<svg viewBox="0 0 650 500" xmlns="http://www.w3.org/2000/svg" class="w-full h-full drop-shadow-2xl">
   <!-- Maintenance Worker with Tools -->
   <g class="animate-float" style="animation-duration: 7s;">
     <!-- Worker -->

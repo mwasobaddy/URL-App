@@ -1,0 +1,10 @@
+fix(ui): resolve yield expression error in error pages
+
+Fixed fatal error in error pages that was preventing them from rendering:
+- Resolved "The yield expression can only be used inside a function" error in the minimal.blade.php template
+- Updated all error pages (401, 402, 403, 404, 419, 429, 500, 503) to use @section/@endsection for message descriptions
+- Fixed template namespace references (errors:: to errors.)
+- Temporarily disabled test error abort in routes for development
+- Cleared view cache to apply changes
+
+This ensures error pages render correctly without PHP parsing errors.

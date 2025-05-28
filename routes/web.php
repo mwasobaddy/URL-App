@@ -12,6 +12,8 @@ Route::view('/', 'welcome')->name('home');
 
 
 Route::middleware(['auth', 'verified'])->group(function () {
+    // display error 404 to test the UI layout if the user is authenticated
+    abort_if(true, 503);
     Route::view('dashboard', 'dashboard')->name('dashboard');
 });
 

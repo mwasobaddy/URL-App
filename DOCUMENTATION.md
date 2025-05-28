@@ -143,3 +143,44 @@ The following services are registered in the `SubscriptionServiceProvider` and c
 - Always use dependency injection when possible as it makes your code more testable
 - Use the `app()` helper for simplicity in smaller components
 - Avoid accessing the services directly in the Blade template section; fetch the data in the mount method instead
+
+## Error Pages Design System
+
+The application includes a comprehensive set of custom error pages with modern UI/UX design:
+
+### Base Template
+The error pages use a shared base template (`resources/views/errors/minimal.blade.php`) that provides:
+- Modern blue gradient background
+- Responsive split-screen layout (content on left, illustration on right)
+- Enhanced typography using Poppins font
+- Advanced animation effects (float, pulse, shimmer)
+- Improved button designs with interactive effects
+
+### Custom Error Pages
+Each error type has a dedicated page with custom SVG illustrations:
+
+| Error Code | Description | Visual Theme |
+|------------|-------------|--------------|
+| 404 | Not Found | Person on scooter looking for connection |
+| 403 | Forbidden | Shield and lock security visualization |
+| 500 | Server Error | Server rack with error indicators |
+| 503 | Service Unavailable | Maintenance worker with tools |
+| 419 | Page Expired | Key/token visualization with timeout |
+| 429 | Too Many Requests | Traffic light with queue visualization |
+| 401 | Unauthorized | Padlock with login form visualization |
+| 402 | Payment Required | Credit card and payment terminal |
+
+### Design Features
+- **Responsive Design**: All error pages are fully responsive
+- **Interactive Elements**: Subtle animations and hover effects
+- **Clear Messaging**: Enhanced error descriptions
+- **Consistent Styling**: Design language matches the dashboard theme
+- **Accessible**: High contrast text and clear visual indicators
+
+### Implementation
+Error pages extend the base template and provide:
+- Custom error code
+- Custom error message
+- Detailed explanation
+- SVG illustration specific to the error type
+

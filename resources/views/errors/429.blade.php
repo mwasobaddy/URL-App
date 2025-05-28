@@ -3,11 +3,13 @@
 @section('title', __('Too Many Requests'))
 @section('code', '429')
 @section('message', __('Too Many Requests'))
-@section('message_description', __('You have made too many requests recently. Please wait before trying again.'))
+@section('message_description')
+    You have made too many requests recently. Please wait before trying again.
+@endsection
 
 @section('illustration')
 <!-- Custom SVG illustration for 429 page - Rate limit/traffic concept -->
-<svg viewBox="0 0 650 500" xmlns="http://www.w3.org/2000/svg" class="w-full h-auto drop-shadow-2xl">
+<svg viewBox="0 0 650 500" xmlns="http://www.w3.org/2000/svg" class="w-full h-full drop-shadow-2xl">
   <!-- Traffic Light -->
   <g class="animate-float" style="animation-duration: 6s;">
     <!-- Light Housing -->

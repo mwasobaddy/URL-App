@@ -3,11 +3,14 @@
 @section('title', __('Forbidden'))
 @section('code', '403')
 @section('message', __($exception->getMessage() ?: 'Forbidden'))
-@section('message_description', __('Sorry, you do not have permission to access this page. Please contact the administrator if you believe this is an error.'))
+
+@section('message_description')
+    Sorry, you do not have permission to access this page. Please contact the administrator if you believe this is an error.
+@endsection
 
 @section('illustration')
 <!-- Custom SVG illustration for 403 page - Lock and shield concept -->
-<svg viewBox="0 0 650 500" xmlns="http://www.w3.org/2000/svg" class="w-full h-auto drop-shadow-2xl">
+<svg viewBox="0 0 650 500" xmlns="http://www.w3.org/2000/svg" class="w-full h-full drop-shadow-2xl">
   <!-- Shield Base with Lock -->
   <g class="animate-float" style="animation-duration: 8s;">
     <!-- Shield -->

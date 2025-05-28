@@ -1,13 +1,15 @@
-@extends('errors::minimal')
+@extends('errors.minimal')
 
 @section('title', __('Payment Required'))
 @section('code', '402')
 @section('message', __('Payment Required'))
-@section('message_description', __('Access to this resource requires payment. Please upgrade your account or complete the payment process.'))
+@section('message_description')
+    Access to this resource requires payment. Please upgrade your account or complete the payment process.
+@endsection
 
 @section('illustration')
 <!-- Custom SVG illustration for 402 page - Payment Required concept -->
-<svg viewBox="0 0 650 500" xmlns="http://www.w3.org/2000/svg" class="w-full h-auto drop-shadow-2xl">
+<svg viewBox="0 0 650 500" xmlns="http://www.w3.org/2000/svg" class="w-full h-full drop-shadow-2xl">
   <!-- Credit Card -->
   <g class="animate-float" style="animation-duration: 6s;">
     <!-- Card Base -->
