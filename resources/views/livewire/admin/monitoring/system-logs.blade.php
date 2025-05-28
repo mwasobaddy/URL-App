@@ -1,11 +1,14 @@
 <?php
 
 use Livewire\Volt\Component;
+use Livewire\WithPagination;
 use App\Services\AuditLogService;
 use Carbon\Carbon;
 
 new class extends Component 
 {
+    use WithPagination;
+    
     public array $filter = [
         'event' => '',
         'user_id' => '',
@@ -16,16 +19,16 @@ new class extends Component
         'per_page' => 15,
     ];
     public string $selectedTab = 'all'; // all, user, system, security
-    public array $logs = [];
     public array $statistics = [];
+    protected $auditLogService;
 
     public function mount(AuditLogService $auditLogService)
     {
-        $this->refreshLogs($auditLogService);
+        $this->auditLogService = $auditLogService;
         $this->statistics = $auditLogService->getEventStatistics();
     }
 
-    public function refreshLogs(AuditLogService $auditLogService)
+    public function getLogs()
     {
         $filters = $this->filter;
         
@@ -33,11 +36,16 @@ new class extends Component
             $filters['tag'] = $this->selectedTab;
         }
         
-        $this->logs = match ($this->selectedTab) {
-            'security' => $auditLogService->getSecurityEvents($filters),
-            'system' => $auditLogService->getSystemEvents($filters),
-            default => $auditLogService->getActivityLogs($filters),
+        return match ($this->selectedTab) {
+            'security' => $this->auditLogService->getSecurityEvents($filters),
+            'system' => $this->auditLogService->getSystemEvents($filters),
+            default => $this->auditLogService->getActivityLogs($filters),
         };
+    }
+
+    public function refreshLogs()
+    {
+        $this->resetPage();
     }
 
     public function selectTab(string $tab)
@@ -208,41 +216,44 @@ new class extends Component
             <!-- Filters -->
             <div class="mt-6 bg-gray-50 dark:bg-zinc-900 rounded-lg p-4">
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                    <x-input
+                    <flux:input
                         type="search"
                         placeholder="Search events..."
-                        wire:model.live.debounce.300ms="filter.event"
+                        wire:model="filter.event"
+                        debounce="300ms"
                     />
-
-                    <x-native-select
-                        wire:model.live="filter.per_page"
+                    
+                    <select
+                        wire:model="filter.per_page"
+                        class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm rounded-md dark:bg-zinc-800 dark:border-zinc-700 dark:text-white"
                     >
                         <option value="15">15 per page</option>
                         <option value="30">30 per page</option>
                         <option value="50">50 per page</option>
                         <option value="100">100 per page</option>
-                    </x-native-select>
-
-                    <x-input
+                    </select>
+                    
+                    <flux:input
                         type="date"
                         placeholder="From date"
-                        wire:model.live="filter.date_from"
+                        wire:model="filter.date_from"
                     />
-
-                    <x-input
+                    
+                    <flux:input
                         type="date"
                         placeholder="To date"
-                        wire:model.live="filter.date_to"
+                        wire:model="filter.date_to"
                     />
+                        
                 </div>
 
                 <div class="mt-4 flex justify-end space-x-3">
-                    <x-button 
+                    <flux:button 
                         wire:click="resetFilters"
-                        type="button"
+                        variant="primary"
                     >
                         Reset Filters
-                    </x-button>
+                    </flux:button>
                 </div>
             </div>
 

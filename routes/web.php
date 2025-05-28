@@ -95,10 +95,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     // System Monitoring
     Route::prefix('monitoring')->name('monitoring.')->group(function () {
         Volt::route('/health', 'admin.monitoring.health-dashboard')->name('health');
+        Volt::route('/system-logs', 'admin.monitoring.system-logs')->name('system-logs');
     });
-    
-    // System Logs
-    Volt::route('/logs', 'admin.logs')->name('logs');
     
     // System Health
     Route::prefix('health')->name('health.')->group(function () {
