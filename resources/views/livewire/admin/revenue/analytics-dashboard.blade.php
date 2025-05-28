@@ -268,7 +268,7 @@ new class extends Component {
                                     </dt>
                                     <dd>
                                         <div class="text-lg font-medium text-gray-900 dark:text-white">
-                                            ${{ number_format($metrics['total_revenue'], 2) }}
+                                            ${{ number_format($this->metrics['total_revenue'], 2) }}
                                         </div>
                                     </dd>
                                 </dl>

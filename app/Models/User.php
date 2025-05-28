@@ -83,4 +83,20 @@ class User extends Authenticatable
     {
         return $this->hasMany(AccessRequest::class, 'requester_id');
     }
+
+    /**
+     * Get the user's subscription
+     */
+    public function subscription()
+    {
+        return $this->hasOne(Subscription::class)->latest();
+    }
+
+    /**
+     * Get all subscriptions for the user
+     */
+    public function subscriptions(): HasMany
+    {
+        return $this->hasMany(Subscription::class);
+    }
 }
