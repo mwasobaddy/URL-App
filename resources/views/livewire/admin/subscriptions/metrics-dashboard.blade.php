@@ -17,39 +17,41 @@ new class extends Component
         $startDate = now()->subDays($this->dateRange);
         
         // Active subscriptions trend
-        $activeSubscriptions = Subscription::where('status', 'active')
-            ->whereNull('cancelled_at')
+        $activeSubscriptions = Subscription::where('subscriptions.status', 'active')
+            ->whereNull('subscriptions.cancelled_at')
             ->count();
 
         // Trial conversions
-        $trialConversions = Subscription::where('status', 'active')
-            ->whereNotNull('trial_ends_at')
-            ->where('trial_ends_at', '<', now())
-            ->whereBetween('updated_at', [$startDate, $endDate])
+        $trialConversions = Subscription::where('subscriptions.status', 'active')
+            ->whereNotNull('subscriptions.trial_ends_at')
+            ->where('subscriptions.trial_ends_at', '<', now())
+            ->whereBetween('subscriptions.updated_at', [$startDate, $endDate])
             ->count();
 
-        $totalTrials = Subscription::whereNotNull('trial_ends_at')
-            ->whereBetween('created_at', [$startDate, $endDate])
+        $totalTrials = Subscription::whereNotNull('subscriptions.trial_ends_at')
+            ->whereBetween('subscriptions.created_at', [$startDate, $endDate])
             ->count();
 
         $conversionRate = $totalTrials > 0 ? ($trialConversions / $totalTrials) * 100 : 0;
 
         // Churn analysis
-        $cancelledSubscriptions = Subscription::whereNotNull('cancelled_at')
-            ->whereBetween('cancelled_at', [$startDate, $endDate])
+        $cancelledSubscriptions = Subscription::whereNotNull('subscriptions.cancelled_at')
+            ->whereBetween('subscriptions.cancelled_at', [$startDate, $endDate])
             ->count();
 
-        $totalActiveStart = Subscription::where('status', 'active')
-            ->where('created_at', '<', $startDate)
+        $totalActiveStart = Subscription::where('subscriptions.status', 'active')
+            ->where('subscriptions.created_at', '<', $startDate)
             ->count();
 
         $churnRate = $totalActiveStart > 0 ? ($cancelledSubscriptions / $totalActiveStart) * 100 : 0;
 
         // MRR/ARR Calculations
-        $mrr = Subscription::where('status', 'active')
-            ->whereNull('cancelled_at')
-            ->whereNull('trial_ends_at')
-            ->orWhere('trial_ends_at', '<', now())
+        $mrr = Subscription::where('subscriptions.status', 'active')
+            ->whereNull('subscriptions.cancelled_at')
+            ->where(function($query) {
+                $query->whereNull('subscriptions.trial_ends_at')
+                      ->orWhere('subscriptions.trial_ends_at', '<', now());
+            })
             ->with('planVersion')
             ->get()
             ->sum(function ($subscription) {
@@ -61,12 +63,12 @@ new class extends Component
         $arr = $mrr * 12;
 
         // Daily Revenue Trend
-        $dailyRevenue = Subscription::where('status', 'active')
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->selectRaw('DATE(created_at) as date, SUM(CASE 
-                WHEN interval = "yearly" THEN plan_versions.yearly_price
+        $dailyRevenue = Subscription::where('subscriptions.status', 'active')
+            ->whereBetween('subscriptions.created_at', [$startDate, $endDate])
+            ->selectRaw("DATE(subscriptions.created_at) as date, SUM(CASE 
+                WHEN subscriptions.interval = 'yearly' THEN plan_versions.yearly_price
                 ELSE plan_versions.monthly_price 
-                END) as revenue')
+                END) as revenue")
             ->join('plan_versions', 'subscriptions.plan_version_id', '=', 'plan_versions.id')
             ->groupBy('date')
             ->orderBy('date')

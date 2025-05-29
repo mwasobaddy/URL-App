@@ -66,6 +66,11 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
         Volt::route('/{user}', 'admin.users.show')->name('show');
         Volt::route('/roles', 'admin.users.roles')->name('roles');
     });
+
+    // Customers
+    Route::prefix('customers')->name('customers.')->group(function () {
+        Volt::route('/{user}', 'admin.customers.show')->name('show');
+    });
     
     // Plans
     Route::prefix('plans')->name('plans.')->group(function () {

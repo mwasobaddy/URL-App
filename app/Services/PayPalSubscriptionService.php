@@ -6,6 +6,7 @@ use App\Models\Plan;
 use App\Models\Subscription;
 use App\Models\User;
 use Illuminate\Support\Facades\Log;
+use Srmklive\PayPal\Services\PayPal as PayPalClient;
 use Exception;
 
 class PayPalSubscriptionService
@@ -20,8 +21,7 @@ class PayPalSubscriptionService
     ) {
         $this->paypalApi = $paypalApi;
         $this->subscriptionService = $subscriptionService;
-        $this->paypal = new PayPalClient;
-        $this->paypal->setApiCredentials(config('paypal'));
+        $this->paypal = new PayPalClient(config('paypal'));
         $this->paypal->getAccessToken();
     }
 

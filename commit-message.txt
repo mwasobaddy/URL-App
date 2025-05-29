@@ -1,21 +1,24 @@
-fix(admin): resolve circular dependency in subscription services
+fix: Admin customer and subscription issues
 
-Fixed an error occurring when clicking on the "Customer Overview" link in the subscriptions admin page:
+This commit addresses multiple issues related to the admin dashboard's customer and subscription functionality:
 
-- Fixed circular dependency between SubscriptionService and PayPalSubscriptionService
-- Modified SubscriptionServiceProvider to properly register PayPalTokenService and PayPalAPIService
-- Updated SubscriptionService to accept nullable PayPalSubscriptionService and added setter method
-- Added error handling to Customer Subscription Overview component methods
-- Updated CHANGELOG.md with version 1.2.11
+1. Customer Overview:
+   - Added missing customer detail view (admin.customers.show)
+   - Created new route in web.php for viewing detailed customer information
+   - Fixed "Route [admin.customers.show] not defined" error when clicking "View Customer"
+   - Added comprehensive UI showing customer details, subscription data, and usage metrics
+   - Added error handling for usage stats and feature limits
 
-The error "trim(): Argument #1 ($string) must be of type string, array given" was caused by a circular 
-dependency that prevented services from being properly initialized.
+2. Subscription Metrics:
+   - Fixed SQL errors in the metrics dashboard due to ambiguous column references
+   - Qualified all table column references in join queries
+   - Fixed SQLite compatibility issues with string literal quoting
+   - Improved query structure for calculating MRR/ARR with proper conditions
+   - Enhanced error handling for database queries
 
-- Enhanced error descriptions to provide clearer guidance to users
-- Ensured consistent design language with the dashboard theme
-- Implemented responsive design for all screen sizes
-- Added subtle micro-interactions for improved user experience
+3. Documentation:
+   - Updated CHANGELOG.md with versions 1.2.11 and 1.2.12
+   - Added detailed descriptions of all fixed issues
 
-These changes provide a more engaging, informative, and visually appealing
-experience when users encounter error pages, maintaining brand consistency
-and improving the overall user journey even during error states.
+These changes ensure proper functionality of the customer management and subscription metrics
+sections in the admin dashboard while eliminating SQL errors and improving error resilience.

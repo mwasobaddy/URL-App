@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.12] - 2025-05-29
+
+### Fixed
+- Fixed SQL query error in Subscription Metrics Dashboard
+  - Resolved ambiguous column name issue by properly qualifying all table columns
+  - Fixed SQLite compatibility issues with quoting in raw SQL
+  - Improved query structure in MRR/ARR calculations
+
 ## [1.2.11] - 2025-05-28
 
 ### Fixed
@@ -13,6 +21,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Updated SubscriptionServiceProvider to properly register all services
   - Added error handling to the Customer Subscription Overview component
   - Fixed "trim(): Argument #1 ($string) must be of type string, array given" error when accessing Customer Overview
+- Added missing customer detail view
+  - Created new admin.customers.show route in web.php
+  - Added Customer Show component to display detailed user information
+  - Fixed "Route [admin.customers.show] not defined" error when clicking "View Customer"
 
 ## [1.2.10] - 2025-05-31
 
